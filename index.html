@@ -263,8 +263,8 @@ html,body{height:100%;background:#F7F6F3;color:#1C1917;font-family:'Inter',sans-
   <p class="i-sub">Treinamento em tomada de decisão clínica — Algoritmos PALS Out/2025</p>
   <div class="i-ecg"><div class="i-ecg-lbl">DII · 25mm/s</div><canvas id="i-canvas"></canvas></div>
   <div class="i-stats">
-    <div class="i-stat"><div class="i-stat-n">12</div><div class="i-stat-l">Casos clínicos</div></div>
-    <div class="i-stat"><div class="i-stat-n">42</div><div class="i-stat-l">Decisões críticas</div></div>
+    <div class="i-stat"><div class="i-stat-n">13</div><div class="i-stat-l">Casos clínicos</div></div>
+    <div class="i-stat"><div class="i-stat-n">45</div><div class="i-stat-l">Decisões críticas</div></div>
     <div class="i-stat"><div class="i-stat-n">90s</div><div class="i-stat-l">Por passo</div></div>
   </div>
   <div class="i-notice"><b>⚠ Atenção:</b> nos casos intra-hospitalares, os traçados ECG são exibidos <b>sem identificação</b>. Você deve reconhecê-los clinicamente. Casos extra-hospitalares não exibem monitor — simule sem equipamento.</div>
@@ -472,114 +472,123 @@ function buildCurve(ctrlPts, period) {
 }
 
 /*
-  SINUSAL NORMAL (FC ~75 bpm, período 100px a 25mm/s)
-  Ondas: P pequena positiva, intervalo PR, QRS estreito (subida abrupta),
-  segmento ST isoelétrico, onda T positiva assimétrica (subida lenta, descida rápida)
+  SINUSAL NORMAL (FC ~75 bpm, período 100px)
+  P arredondada, PR 160ms, QRS estreito com deflexão rápida, T positiva assimétrica
 */
 const _sinusalCtrl = [
-  [0,0],[3,0],[6,0.06],[9,0.08],[12,0.06],[15,0],[18,0],   // onda P
-  [22,0],[25,0],[28,-0.06],                                   // PR + deflexão Q mínima
-  [30,-0.08],[31.5,0],[33,1.0],[34.5,0.15],[36,-0.25],       // QRS: Q, R abrupto, S
-  [38,-0.28],[40,-0.1],[42,0],                                // retorno isoelétrico (S→isoelétrico)
-  [46,0],[50,0],                                              // segmento ST
-  [54,0.02],[58,0.18],[63,0.22],[68,0.18],[74,0.05],[78,0],  // onda T positiva assimétrica
-  [82,0],[90,0],[100,0]                                       // intervalo TP
+  [0,0],[4,0],[7,0.04],[10,0.09],[13,0.09],[16,0.05],[19,0],[22,0],
+  [26,0],[29,-0.07],
+  [30.5,-0.09],[32,0],[33.2,1.0],[34.2,0.12],[35.5,-0.22],
+  [37,-0.24],[39,-0.08],[41,0],
+  [45,0],[50,0],
+  [55,0.02],[60,0.16],[65,0.22],[70,0.18],[76,0.06],[80,0],
+  [86,0],[93,0],[100,0]
 ];
 const sinusalFn = buildCurve(_sinusalCtrl, 100);
 
 /*
-  BRADICARDIA SINUSAL (FC ~35 bpm, período 210px)
-  Mesma morfologia, período mais longo, TP muito prolongado
+  BRADICARDIA SINUSAL (FC ~32 bpm, período 230px)
 */
 const _bradCtrl = [
-  [0,0],[4,0],[8,0.07],[12,0.09],[16,0.07],[20,0],[24,0],
-  [30,0],[33,-0.07],
-  [35,-0.10],[36.5,0],[38,1.0],[39.5,0.15],[41,-0.28],
-  [43,-0.30],[46,-0.08],[49,0],
-  [54,0],[60,0],
-  [65,0.02],[70,0.20],[76,0.24],[82,0.20],[89,0.05],[94,0],
-  [100,0],[120,0],[150,0],[180,0],[210,0]
+  [0,0],[5,0],[9,0.05],[13,0.09],[17,0.07],[21,0],[25,0],
+  [31,0],[34,-0.07],
+  [36,-0.10],[37.5,0],[39,1.0],[40.2,0.12],[41.5,-0.24],
+  [43,-0.26],[46,-0.07],[49,0],
+  [55,0],[62,0],
+  [67,0.02],[73,0.20],[80,0.24],[87,0.18],[94,0.04],[99,0],
+  [110,0],[140,0],[170,0],[200,0],[230,0]
 ];
-const bradicardiaFn = buildCurve(_bradCtrl, 210);
+const bradicardiaFn = buildCurve(_bradCtrl, 230);
 
 /*
-  TSV (FC ~200 bpm, período 36px)
-  QRS estreito, onda P retrógrada enterrada no QRS ou logo após (não visível claramente),
-  sem onda P visível antes do QRS, T negativa ou bifásica
+  TSV (FC ~220 bpm, período 33px)
+  QRS estreito (<0.08s), sem onda P visível antes, T negativa ou plana
 */
 const _tsvCtrl = [
   [0,0],[1,0],
-  [2,-0.05],[3,0],[4,0.95],[5,0.12],[6,-0.30],   // QRS estreito rápido
-  [7,-0.32],[8,-0.12],[9,0],
-  [12,-0.05],[15,-0.12],[18,-0.10],[22,-0.04],[26,0], // T negativa
-  [29,0],[33,0],[36,0]
+  [1.5,-0.04],[2,0],[2.8,0.92],[3.4,0.10],[4.2,-0.28],
+  [5,-0.30],[6,-0.10],[7,0],
+  [9,-0.04],[12,-0.10],[15,-0.09],[19,-0.04],[23,0],
+  [27,0],[30,0],[33,0]
 ];
-const tsvFn = buildCurve(_tsvCtrl, 36);
+const tsvFn = buildCurve(_tsvCtrl, 33);
 
 /*
-  FV (Fibrilação Ventricular) — grosseira
-  Ondas caóticas de amplitude variável, sem complexos identificáveis.
-  Simulada com soma de senoides de frequências irracionais + ruído controlado.
-  Sem periodicidade fixa — parece genuinamente aleatória mas é determinística.
+  FV GROSSEIRA — caótica, amplitude variável, sem complexos identificáveis.
+  Soma de senóides com frequências irracionais + modulação de amplitude.
+  Semelhante à FV coarse real: ondas irregulares de 150-500 "ciclos"/min.
 */
-let fvNoise = new Float32Array(1024);
-(function(){for(let i=0;i<1024;i++) fvNoise[i]=(Math.sin(i*1.618)*Math.sin(i*2.718)+Math.sin(i*.414)*0.5)*0.8;})();
 function fvFn(x, a) {
-  const xi = ((x|0) & 1023);
-  const n = fvNoise[xi];
-  // Amplitude oscilante (grosseira → coarse FV)
-  const env = 0.55 + 0.35*Math.sin(x*0.031);
-  return a * env * (
-    0.60*Math.sin(x*0.523+1.1) +
-    0.35*Math.sin(x*0.891+2.3) +
-    0.25*Math.sin(x*1.414+0.7) +
-    0.15*n
-  );
+  // Envelope de amplitude oscilante — "grosseiro" (coarse)
+  const env = 0.60 + 0.28*Math.sin(x*0.0294) + 0.12*Math.sin(x*0.0711+1.3);
+  // Componentes de frequência irracional para aperidicidade real
+  const c1 = 0.48*Math.sin(x*0.5236+1.1);   // ~100 bpm equiv.
+  const c2 = 0.32*Math.sin(x*0.8901+2.4);   // ~170 bpm
+  const c3 = 0.24*Math.sin(x*1.3090+0.6);   // ~250 bpm
+  const c4 = 0.18*Math.sin(x*0.2618+3.2);   // ~50 bpm (ondulação lenta)
+  const c5 = 0.14*Math.sin(x*2.0944+0.9);   // ~400 bpm (tremor rápido)
+  // Picos irregulares ocasionais (componente cúbico)
+  const spk = 0.22*Math.pow(Math.sin(x*0.6632+0.4),3);
+  return a * env * (c1+c2+c3+c4+c5+spk);
 }
 
 /*
-  TV SEM PULSO — complexos largos (> 0.12s = >3px), regulares, morfologia monomórfica.
-  QRS alargado com morfologia de BRE (bundle right block espelho):
-  deflexão inicial positiva ampla, sem onda S nítida, T negativa discordante.
-  Período 40px (FC ~187 bpm, típico de TV)
+  TV SEM PULSO — monomórfica, complexos largos e regulares (~180 bpm, período 40px).
+  QRS > 160ms (>4px): subida lenta, pico arredondado, descida para T negativa discordante.
+  Morfologia BRE: positivo em DII com entalhes, T negativa.
 */
 const _tvCtrl = [
   [0,0],[1,0],
-  [2,-0.08],[4,0],[5,0.20],[7,0.55],[9,0.85],   // subida lenta (largo) positiva
-  [11,0.90],[12,0.88],[14,0.70],[16,0.45],        // plateau — QRS alargado
-  [18,0.15],[20,-0.05],[21,-0.12],                // descida
-  [22,-0.15],[24,-0.10],[26,-0.12],[29,-0.08],    // T negativa discordante
-  [32,-0.04],[35,0],[38,0],[40,0]
+  [2,-0.06],[3.5,0],
+  [5,0.18],[7.5,0.52],[10,0.82],[12,0.93],[13.5,0.90],   // subida lenta (QRS largo)
+  [15,0.84],[16.5,0.75],[18,0.60],[20,0.38],               // descendente com entalhes
+  [21.5,0.18],[23,0.02],[24,-0.04],
+  [25,-0.08],[27,-0.18],[29.5,-0.22],[32,-0.18],           // T negativa discordante
+  [34.5,-0.10],[36.5,-0.03],[38,0],[40,0]
 ];
 const tvspFn = buildCurve(_tvCtrl, 40);
 
 /*
-  ASSISTOLIA — linha quase reta com tremor de base mínimo (artefato elétrico).
-  Sem complexos. Pequeno ruído senoidal de baixa frequência.
+  TORSADES DE POINTES (~200 bpm, período 30px).
+  Eixo do QRS "torce" em torno da linha isoelétrica a cada ~15 ciclos.
+  Amplitude modula sinusoidalmente: max positivo → zero → max negativo → zero.
 */
-let asystNoise = new Float32Array(512);
-(function(){for(let i=0;i<512;i++) asystNoise[i]=Math.sin(i*0.17)*0.012+Math.sin(i*0.043)*0.008;})();
-function assistoliaFn(x, a) {
-  return a * asystNoise[(x|0)&511];
+function torsadesFn(x, a) {
+  const period   = 30;   // ~200 bpm
+  const twistLen = 450;  // extensão de um ciclo de torção (~15 seg visual)
+  const p = x % period;
+  // Forma do QRS: sinusoidal largo com entalhe no topo
+  const qrs = Math.sin(p / period * 2 * Math.PI)
+             + 0.18 * Math.sin(p / period * 4 * Math.PI + 0.4);
+  // Envelope de torção: amplitude e polaridade moduladas
+  const twist = Math.sin(x * Math.PI / (twistLen / 2));
+  // Variação sutil de frequência (taquicardia ligeiramente irregular)
+  const freqJitter = 1 + 0.06 * Math.sin(x * 0.021);
+  const qrsJ = Math.sin(p * freqJitter / period * 2 * Math.PI)
+              + 0.18 * Math.sin(p * freqJitter / period * 4 * Math.PI + 0.4);
+  return a * twist * qrsJ;
 }
 
 /*
-  AESP — Atividade Elétrica Sem Pulso.
-  Complexos QRS ORGANIZADOS mas de baixa amplitude e morfologia aberrante:
-  QRS alargado, morfologia distorcida (como escape juncional ou idioventricular lento),
-  ausência de ondas P claramente identificáveis, T plana.
-  FC lenta (~40 bpm), período 150px
+  ASSISTOLIA — linha isoelétrica com tremor basal mínimo (artefato muscular/elétrico).
+*/
+function assistoliaFn(x, a) {
+  return a * (0.012*Math.sin(x*0.173+0.5) + 0.008*Math.sin(x*0.044+1.2) + 0.005*Math.sin(x*0.531+0.7));
+}
+
+/*
+  AESP — complexos QRS organizados, lentos (~38 bpm, período 155px), BAIXA amplitude.
+  Morfologia idioventricular: QRS largo, sem ondas P, T plana discordante.
 */
 const _aespCtrl = [
-  [0,0],[5,0],[10,0],
-  [14,0],[16,-0.04],[18,0],                      // deflexão mínima pré-QRS
-  [20,-0.05],[22,0.05],[24,0.48],                 // subida lenta (QRS alargado, baixa amplitude)
-  [26,0.50],[28,0.44],[30,0.22],[32,0.05],        // plateau baixo
-  [34,-0.12],[36,-0.14],[38,-0.08],[40,-0.02],    // S pequeno
-  [44,0],[50,0.03],[55,0.04],[60,0.02],[65,0],    // T muito baixa
-  [75,0],[100,0],[120,0],[150,0]
+  [0,0],[6,0],[12,0],
+  [15,0],[17,-0.03],[19,0.02],
+  [21,0.05],[24,0.32],[27,0.44],[29,0.40],[31,0.28],
+  [33,0.12],[35,-0.03],[37,-0.10],[39,-0.12],[41,-0.08],[43,-0.02],
+  [48,0],[55,0.02],[62,0.03],[68,0.02],[74,0],
+  [90,0],[115,0],[135,0],[155,0]
 ];
-const aespFn = buildCurve(_aespCtrl, 150);
+const aespFn = buildCurve(_aespCtrl, 155);
 
 // Mapa de ritmos
 const ECG = {
@@ -588,6 +597,7 @@ const ECG = {
   tsv:        (x,a) => a * tsvFn(x),
   fv:         (x,a) => fvFn(x, a),
   tvsp:       (x,a) => a * tvspFn(x),
+  torsades:   (x,a) => torsadesFn(x, a),
   assistolia: (x,a) => assistoliaFn(x, a),
   aesp:       (x,a) => a * aespFn(x),
 };
@@ -1105,7 +1115,28 @@ steps:[
   va:{hr:'180',spo2:'95',bp:'82/54',rr:'36',rl:'TSV · CONVERTENDO',rc:'#FFD54F',rb:'rgba(255,213,79,.1)',rbd:'rgba(255,213,79,.3)'},sa:56,sl2:'Adenosina administrada'}
 ]},
 
-/* ── 12. INTRA · PCR completo sequência ─────────── */
+/* ── 12. INTRA · Torsades de Pointes ────────────── */
+{t:'Adolescente 16a · Torsades de Pointes',set:'Intra-hospitalar',sev:'PCR CHOCÁVEL',sevTag:'red',ecg:'torsades',
+v:{hr:'200',spo2:'—',bp:'—',rr:'0',temp:'36.7',peso:'58',etco2:'rcp',rl:'IDENTIFIQUE',rc:'#FFD54F',rb:'rgba(255,213,79,.1)',rbd:'rgba(255,213,79,.3)'},
+ctx:'Adolescente de <strong>16 anos (58 kg)</strong> em uso de antipsicótico atípico. Internado por síncope. Monitor: <em>complexos que "torcem" em torno da linha isoelétrica, amplitude variável, FC ~200 bpm.</em> Sem pulso.',
+sp:16,sl:'PCR · traçado polimórfico',
+steps:[
+  {ph:'IDENTIFICAÇÃO · TORSADES',q:'Complexos largos que variam em amplitude e eixo ciclicamente, ~200 bpm, sem pulso. Diagnóstico e conduta?',type:'c',
+  o:[{t:'FV grosseira — desfibrilar 2 J/kg',c:false},{t:'Torsades de Pointes (TV polimórfica) — desfibrilar 2 J/kg = 116 J',c:true},{t:'TSV com aberrância — adenosina 0,1 mg/kg',c:false},{t:'AESP polimórfica — adrenalina precoce',c:false}],
+  pts:20,pen:15,ok:'Torsades = TV polimórfica: complexos que giram em torno da linha isoelétrica. Sem pulso = chocável. Desfibrilar 2 J/kg = 116 J.',fail:'Torsades ≠ FV: tem complexos identificáveis girando. Sem pulso = chocável = desfibrilar. Adenosina é para TSV com complexo estreito.',ref:'PALS 2025: Torsades sem pulso = ritmo chocável = desfibrilar 2 J/kg. Com pulso + instável = cardioversão 1 J/kg.',
+  va:{hr:'—',spo2:'—',bp:'—',rr:'0',rl:'TORSADES · CHOCÁVEL',rc:'#FF4560',rb:'rgba(255,69,96,.1)',rbd:'rgba(255,69,96,.3)'},sa:22,sl2:'Choque 116 J'},
+  {ph:'CAUSA · QT LONGO',q:'Torsades de Pointes está associada a QT longo. Qual a conduta específica além da desfibrilação?',type:'c',
+  o:[{t:'Amiodarona 5 mg/kg — antiarrítmico de escolha',c:false},{t:'Sulfato de magnésio 25–50 mg/kg IV (máx 2g) — tratamento específico',c:true},{t:'Lidocaína 1 mg/kg — igual à TV monomórfica',c:false},{t:'Adenosina 0,1 mg/kg após desfibrilação',c:false}],
+  pts:20,pen:10,ok:'Torsades: magnésio é o tratamento específico (estabiliza membrana, encurta QT). Amiodarona pode PROLONGAR o QT e piorar.',fail:'Magnésio 25–50 mg/kg IV é específico para Torsades. Amiodarona é contraindicada — prolonga QT. Adenosina é para TSV.',ref:'PALS 2025: Torsades → Mg² 25–50 mg/kg IV (máx 2g). Identificar e corrigir causa do QT longo (drogas, distúrbios eletrolíticos).',
+  va:{hr:'—',spo2:'—',bp:'—',rr:'0',rl:'TORSADES · MAGNÉSIO',rc:'#FF4560',rb:'rgba(255,69,96,.1)',rbd:'rgba(255,69,96,.3)'},sa:30,sl2:'Magnésio administrado'},
+  {ph:'CAUSAS REVERSÍVEIS · QT LONGO',q:'Adolescente em uso de antipsicótico. Quais causas de QT longo investigar?',type:'hst',
+  hC:['Hipo/Hiperpotassemia','Hidrogênio (acidose)','Tóxicos'],
+  hI:[{n:'Hipóxia',g:'H',h:'Sempre em PCR'},{n:'Hipovolemia',g:'H',h:'Sem dados'},{n:'Hipotermia',g:'H',h:'Prolonga QT'},{n:'Hipo/Hiperpotassemia',g:'H',h:'K⁺ baixo = QT longo'},{n:'Hidrogênio (acidose)',g:'H',h:'Altera condução'},{n:'Tensão no tórax',g:'T',h:'Sem dados'},{n:'Tamponamento',g:'T',h:'Sem dados'},{n:'Tóxicos',g:'T',h:'Antipsicótico = QT longo'},{n:'Trombose',g:'T',h:'Improvável'},{n:'Trauma',g:'T',h:'Sem mecanismo'}],
+  pts:10,pen:0,ok:'Antipsicótico = tóxico que prolonga QT. Hipocalemia e acidose também prolongam. Tratar em paralelo com RCP.',fail:'QT longo → investigar tóxicos (antipsicóticos, antidepressivos, antiarrítmicos), hipocalemia, hipomagnesemia, hipotermia.',ref:'PALS 2025: Torsades → 5H5T. Tóxicos = causa principal neste caso. Retirar droga, corrigir eletrólitos, magnésio.',
+  va:{hr:'—',spo2:'—',bp:'—',rr:'0',rl:'TORSADES · 5H5T',rc:'#FF4560',rb:'rgba(255,69,96,.1)',rbd:'rgba(255,69,96,.3)'},sa:38,sl2:'Causas investigadas'}
+]},
+
+/* ── 13. INTRA · PCR completo sequência ─────────── */
 {t:'Criança 3a · Sequência Completa PCR',set:'Intra-hospitalar',sev:'PCR COMPLETO',sevTag:'red',ecg:'fv',
 v:{hr:'—',spo2:'—',bp:'—',rr:'0',temp:'36.6',peso:'14',etco2:'rcp',rl:'IDENTIFIQUE',rc:'#FFD54F',rb:'rgba(255,213,79,.1)',rbd:'rgba(255,213,79,.3)'},
 ctx:'Criança de <strong>3 anos (14 kg)</strong> em PCR na UE. Monitor conectado. Equipe de 3 profissionais. Acesso IV obtido. <em>Simule toda a sequência do algoritmo PALS 2025. Identifique o traçado.</em>',
