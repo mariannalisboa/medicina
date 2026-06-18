@@ -1,0 +1,1360 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PALS 2025 · Simulator</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;background:#f5f5f7;color:#111;font-family:'Inter',sans-serif;font-size:14px;line-height:1.5;}
+:root{
+  --red:#C8102E;--red-d:#9B0C23;--red-l:#FFF0F2;--red-b:#FCCDD4;
+  --green:#15803D;--green-l:#F0FDF4;--green-b:#BBF7D0;
+  --amber:#92400E;--amber-l:#FFFBEB;--amber-b:#FDE68A;
+  --blue:#1D4ED8;--blue-l:#EFF6FF;--blue-b:#BFDBFE;
+  --gray-50:#FAFAFA;--gray-100:#F4F4F5;--gray-200:#E4E4E7;
+  --gray-400:#A1A1AA;--gray-600:#52525B;--gray-800:#27272A;--gray-900:#18181B;
+  --border:#E4E4E7;--shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.04);
+  --shadow-lg:0 10px 30px rgba(0,0,0,.10);--r:8px;--r-lg:12px;
+}
+.screen{display:none;}.screen.active{display:flex;}
+
+/* ══════════════════════════════════
+   INTRO
+══════════════════════════════════ */
+#intro{flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:32px 16px;background:#fff;text-align:center;gap:0;}
+.i-eyebrow{font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--red);background:var(--red-l);border:1px solid var(--red-b);border-radius:20px;padding:5px 14px;display:inline-block;margin-bottom:18px;}
+.i-h1{font-size:36px;font-weight:900;color:var(--gray-900);letter-spacing:-.03em;line-height:1.1;margin-bottom:8px;}
+.i-h1 span{color:var(--red);}
+.i-sub{font-size:14px;color:var(--gray-600);margin-bottom:26px;}
+.i-ecg{width:100%;max-width:540px;height:64px;background:var(--gray-900);border-radius:var(--r-lg);margin-bottom:26px;overflow:hidden;position:relative;}
+#i-canvas{width:100%;height:100%;display:block;}
+.i-ecg-lbl{position:absolute;top:7px;left:11px;font-size:9px;font-weight:700;letter-spacing:.12em;color:rgba(255,255,255,.2);font-family:'JetBrains Mono',monospace;}
+.i-stats{display:flex;gap:12px;margin-bottom:26px;}
+.i-stat{background:var(--gray-50);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px 22px;text-align:center;flex:1;}
+.i-stat-n{font-size:32px;font-weight:900;color:var(--red);line-height:1;}
+.i-stat-l{font-size:11px;color:var(--gray-600);margin-top:2px;}
+.i-notice{max-width:500px;background:var(--amber-l);border:1px solid var(--amber-b);border-radius:var(--r);padding:10px 14px;font-size:12px;color:var(--amber);line-height:1.6;margin-bottom:22px;text-align:left;}
+.i-notice b{font-weight:700;}
+.btn-go{background:var(--red);color:#fff;border:none;border-radius:var(--r);padding:13px 32px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;transition:background .12s,transform .1s;}
+.btn-go:hover{background:var(--red-d);}.btn-go:active{transform:scale(.98);}
+
+/* ══════════════════════════════════
+   GAME
+══════════════════════════════════ */
+#game{flex-direction:column;min-height:100vh;}
+
+/* topbar */
+#tb{background:#fff;border-bottom:1px solid var(--border);height:50px;display:flex;align-items:center;justify-content:space-between;padding:0 18px;position:sticky;top:0;z-index:100;box-shadow:var(--shadow);}
+.tb-l{display:flex;align-items:center;gap:10px;}
+.tb-badge{background:var(--red);color:#fff;font-size:10px;font-weight:800;letter-spacing:.14em;padding:4px 9px;border-radius:4px;font-family:'JetBrains Mono',monospace;}
+.tb-title{font-size:13px;font-weight:700;color:var(--gray-800);}
+.tb-r{display:flex;align-items:center;gap:18px;}
+.tb-s{text-align:right;}.tb-s-l{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--gray-400);}.tb-s-v{font-size:17px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--gray-900);}
+#tb-timer{font-size:21px;font-weight:800;font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums;color:var(--gray-900);transition:color .3s;min-width:52px;text-align:right;}
+#tb-timer.warn{color:var(--amber);}.#tb-timer.crit{color:var(--red);}
+
+/* progress */
+#prog{height:3px;background:var(--gray-100);}
+#prog-f{height:100%;background:var(--red);transition:width .5s;}
+
+/* body */
+#gbody{flex:1;display:grid;grid-template-columns:1fr 330px;overflow:hidden;max-height:calc(100vh - 53px);}
+
+/* left */
+#lcol{overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;border-right:1px solid var(--border);}
+#lcol::-webkit-scrollbar{width:4px;}
+#lcol::-webkit-scrollbar-thumb{background:var(--gray-200);border-radius:2px;}
+
+/* ══════════════════════════════════
+   MONITOR — estilo Philips IntelliVue
+══════════════════════════════════ */
+#monitor{
+  background:#050709;
+  border-radius:var(--r-lg);
+  border:1px solid #1a1a24;
+  overflow:hidden;
+  font-family:'JetBrains Mono',monospace;
+}
+
+/* header bar */
+#mon-hdr{
+  padding:5px 12px;
+  border-bottom:1px solid #111118;
+  display:flex;align-items:center;justify-content:space-between;
+  background:#07080D;
+}
+.mon-hdr-l{
+  font-size:9px;font-weight:700;letter-spacing:.16em;
+  color:rgba(255,255,255,.2);
+}
+#rhythm-badge{
+  font-size:9px;font-weight:700;letter-spacing:.1em;
+  padding:2px 9px;border-radius:3px;transition:all .3s;
+}
+
+/* channel rows: waveform left, numerics right */
+.mon-ch{
+  display:grid;
+  grid-template-columns:1fr 130px;
+  border-bottom:1px solid #111118;
+}
+.mon-ch:last-child{border-bottom:none;}
+
+/* waveform pane */
+.mon-wave{
+  position:relative;
+  border-right:1px solid #111118;
+}
+.mon-wave-lbl{
+  position:absolute;top:5px;left:9px;
+  font-size:8px;font-weight:700;letter-spacing:.12em;
+  z-index:2;opacity:.55;
+}
+.mon-wave-speed{
+  position:absolute;bottom:4px;right:8px;
+  font-size:7px;letter-spacing:.08em;
+  color:rgba(255,255,255,.18);
+}
+.mon-c{display:block;width:100%;}
+
+/* numeric pane */
+.mon-num{
+  display:flex;flex-direction:column;
+  justify-content:center;
+  padding:6px 10px;
+  gap:1px;
+}
+.mon-param{
+  font-size:8px;font-weight:700;letter-spacing:.14em;
+  opacity:.6;line-height:1;
+}
+.mon-val{
+  font-size:32px;font-weight:800;
+  font-variant-numeric:tabular-nums;
+  letter-spacing:-.02em;line-height:1.05;
+}
+.mon-sub{
+  font-size:9px;opacity:.4;line-height:1;margin-top:1px;
+}
+.mon-unit{
+  font-size:9px;opacity:.35;line-height:1;
+}
+
+/* alarm flash on value */
+@keyframes val-flash{0%,100%{opacity:1}50%{opacity:.35}}
+.mon-val.alarm{animation:val-flash .7s ease-in-out infinite;}
+
+/* bottom vitals strip */
+#vstrip-bottom{
+  display:flex;align-items:stretch;
+  background:#07080D;
+  border-top:1px solid #111118;
+  padding:6px 0;
+  font-family:'JetBrains Mono',monospace;
+}
+.vb-item{
+  flex:1;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:4px 6px;gap:1px;
+}
+.vb-lbl{font-size:8px;font-weight:700;letter-spacing:.14em;opacity:.6;line-height:1;}
+.vb-val{font-size:22px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.02em;line-height:1.1;}
+.vb-unit{font-size:8px;opacity:.35;line-height:1;}
+.vb-sub{font-size:8px;opacity:.35;line-height:1;margin-top:1px;}
+.vb-sep{width:1px;background:#111118;margin:2px 0;}
+#ccard{background:#fff;border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;}
+.cc-hdr{padding:9px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.tag{font-size:10px;font-weight:700;letter-spacing:.06em;padding:3px 9px;border-radius:3px;text-transform:uppercase;}
+.tag-red{background:var(--red-l);color:var(--red);border:1px solid var(--red-b);}
+.tag-amber{background:var(--amber-l);color:var(--amber);border:1px solid var(--amber-b);}
+.tag-blue{background:var(--blue-l);color:var(--blue);border:1px solid var(--blue-b);}
+.tag-green{background:var(--green-l);color:var(--green);border:1px solid var(--green-b);}
+.tag-gray{background:var(--gray-100);color:var(--gray-600);border:1px solid var(--border);}
+.cc-body{padding:12px 14px;}
+.cc-title{font-size:15px;font-weight:800;color:var(--gray-900);margin-bottom:8px;letter-spacing:-.01em;}
+.cc-ctx{font-size:12.5px;line-height:1.75;color:var(--gray-600);background:var(--gray-50);border-radius:var(--r);padding:10px 12px;border-left:3px solid var(--red);}
+.cc-ctx strong{color:var(--gray-900);font-weight:600;}
+.cc-ctx em{color:var(--red);font-style:normal;font-weight:600;}
+#phase-row{padding:8px 14px 0;display:flex;gap:5px;}
+.pp{height:4px;flex:1;border-radius:2px;background:var(--gray-100);transition:background .3s;}
+.pp.done{background:var(--green);}.pp.active{background:var(--red);}
+#pt-row{padding:9px 14px;display:flex;align-items:center;gap:8px;}
+#pt-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+#pt-lbl{font-size:11px;color:var(--gray-600);flex:1;font-weight:500;}
+#pt-bg{width:72px;height:4px;background:var(--gray-100);border-radius:2px;overflow:hidden;}
+#pt-fill{height:100%;border-radius:2px;transition:width .6s,background .4s;}
+#smini{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:0 14px 12px;}
+.sm{background:var(--gray-50);border:1px solid var(--border);border-radius:var(--r);padding:7px;text-align:center;}
+.sm-l{font-size:9px;color:var(--gray-400);font-weight:600;text-transform:uppercase;letter-spacing:.06em;}
+.sm-v{font-size:19px;font-weight:800;font-variant-numeric:tabular-nums;}
+
+/* right col */
+#rcol{display:flex;flex-direction:column;background:#fff;overflow:hidden;}
+#rscroll{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:9px;}
+#rscroll::-webkit-scrollbar{width:4px;}
+#rscroll::-webkit-scrollbar-thumb{background:var(--gray-200);border-radius:2px;}
+.s-phase{font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--red);font-family:'JetBrains Mono',monospace;}
+.s-q{font-size:13.5px;font-weight:600;color:var(--gray-900);line-height:1.55;}
+.opts{display:flex;flex-direction:column;gap:5px;}
+.ob{background:var(--gray-50);border:1px solid var(--border);border-radius:var(--r);padding:9px 11px;cursor:pointer;text-align:left;display:flex;align-items:flex-start;gap:8px;font-size:12.5px;color:var(--gray-800);line-height:1.4;font-family:'Inter',sans-serif;transition:border-color .1s,background .1s;}
+.ob:hover:not(:disabled){border-color:var(--red);background:var(--red-l);}
+.ob:disabled{cursor:default;}
+.ok{min-width:18px;height:18px;border-radius:4px;background:var(--gray-200);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:var(--gray-600);flex-shrink:0;margin-top:1px;font-family:'JetBrains Mono',monospace;transition:all .1s;}
+.ob.correct{border-color:var(--green);background:var(--green-l);}.ob.correct .ok{background:var(--green);color:#fff;}
+.ob.wrong{border-color:var(--red);background:var(--red-l);}.ob.wrong .ok{background:var(--red);color:#fff;}
+.ob.reveal{border-color:var(--green-b);background:var(--green-l);opacity:.5;}
+.hg{display:grid;grid-template-columns:1fr 1fr;gap:4px;}
+.hi{display:flex;align-items:center;gap:5px;padding:6px 8px;border-radius:6px;border:1px solid var(--border);background:var(--gray-50);cursor:pointer;font-size:11px;color:var(--gray-800);transition:all .1s;}
+.hi:hover{border-color:var(--red);background:var(--red-l);}
+.hd{width:6px;height:6px;border-radius:50%;background:var(--gray-200);flex-shrink:0;transition:background .1s;}
+.hi.sel{border-color:var(--red);background:var(--red-l);}.hi.sel .hd{background:var(--red);}
+.hi.hit{border-color:var(--green);background:var(--green-l);}.hi.hit .hd{background:var(--green);}
+.hi.miss-sel{border-color:var(--red-b);opacity:.4;}
+.hcat{font-size:8px;font-weight:800;color:var(--gray-400);font-family:'JetBrains Mono',monospace;width:9px;}
+.hh{font-size:9px;color:var(--gray-400);margin-left:auto;white-space:nowrap;}
+.fb{border-radius:var(--r);padding:10px 12px;display:none;}
+.fb.show{display:block;}
+.fb.ok-fb{background:var(--green-l);border:1px solid var(--green-b);}
+.fb.fail-fb{background:var(--red-l);border:1px solid var(--red-b);}
+.fb.timeout-fb{background:var(--amber-l);border:1px solid var(--amber-b);}
+.fb-hd{font-size:9px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px;font-family:'JetBrains Mono',monospace;}
+.fb-hd.ok-fb{color:var(--green);}.fb-hd.fail-fb{color:var(--red);}.fb-hd.timeout-fb{color:var(--amber);}
+.fb-body{font-size:12px;color:var(--gray-700);line-height:1.6;}
+.fb-ref{margin-top:6px;font-size:11px;color:var(--gray-500);padding-top:6px;border-top:1px solid var(--gray-200);line-height:1.55;}
+.fb-ref b{color:var(--gray-700);font-weight:700;}
+#rfooter{padding:10px 14px;border-top:1px solid var(--border);display:flex;gap:7px;}
+.btn-confirm{background:var(--gray-50);color:var(--gray-800);border:1px solid var(--border);border-radius:var(--r);padding:8px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:all .12s;display:none;}
+.btn-confirm:hover{border-color:var(--red);color:var(--red);}
+.btn-confirm:disabled{opacity:.4;cursor:default;}
+.btn-next{flex:1;background:var(--red);color:#fff;border:none;border-radius:var(--r);padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;transition:background .12s,transform .1s;}
+.btn-next:hover{background:var(--red-d);}.btn-next:active{transform:scale(.98);}
+.btn-next:disabled{background:var(--gray-200);color:var(--gray-400);cursor:default;}
+
+/* ══════════════════════════════════
+   END
+══════════════════════════════════ */
+#end{flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:32px 16px;background:#fff;text-align:center;gap:0;}
+.e-badge{font-size:10px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--red);background:var(--red-l);border:1px solid var(--red-b);border-radius:4px;padding:4px 12px;display:inline-block;margin-bottom:12px;font-family:'JetBrains Mono',monospace;}
+.e-pts{font-size:80px;font-weight:900;color:var(--gray-900);line-height:1;letter-spacing:-.04em;margin-bottom:4px;}
+.e-sub{font-size:13px;color:var(--gray-400);margin-bottom:10px;}
+.e-grade{font-size:22px;font-weight:800;margin-bottom:12px;}
+.e-msg{font-size:13px;color:var(--gray-600);max-width:440px;line-height:1.7;margin:0 auto 20px;}
+.e-tbl{width:100%;max-width:520px;border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;margin-bottom:20px;text-align:left;max-height:220px;overflow-y:auto;}
+.er{display:flex;justify-content:space-between;align-items:center;padding:7px 14px;border-bottom:1px solid var(--border);font-size:11.5px;color:var(--gray-700);}
+.er:last-child{border-bottom:none;}
+.er-tag{font-size:9px;font-weight:800;padding:2px 7px;border-radius:3px;font-family:'JetBrains Mono',monospace;}
+.er-ok{background:var(--green-l);color:var(--green);}.er-fail{background:var(--red-l);color:var(--red);}
+
+/* combo badge in topbar */
+.combo{font-size:11px;font-weight:700;color:var(--amber);display:none;animation:combo-pop .3s ease-out;}
+@keyframes combo-pop{0%{transform:scale(1.4);opacity:0}100%{transform:scale(1);opacity:1}}
+</style>
+</head>
+<body>
+
+<!-- ════ INTRO ════ -->
+<div id="intro" class="screen active">
+  <div class="i-eyebrow">PALS 2025 · AHA/AAP</div>
+  <h1 class="i-h1">Pediatric Emergency<br><span>Simulator</span></h1>
+  <p class="i-sub">Treinamento em tomada de decisão clínica — Algoritmos PALS Out/2025</p>
+  <div class="i-ecg"><div class="i-ecg-lbl">DII · 25mm/s</div><canvas id="i-canvas"></canvas></div>
+  <div class="i-stats">
+    <div class="i-stat"><div class="i-stat-n">12</div><div class="i-stat-l">Casos clínicos</div></div>
+    <div class="i-stat"><div class="i-stat-n">42</div><div class="i-stat-l">Decisões críticas</div></div>
+    <div class="i-stat"><div class="i-stat-n">90s</div><div class="i-stat-l">Por passo</div></div>
+  </div>
+  <div class="i-notice"><b>⚠ Atenção:</b> nos casos intra-hospitalares, os traçados ECG são exibidos <b>sem identificação</b>. Você deve reconhecê-los clinicamente. Casos extra-hospitalares não exibem monitor — simule sem equipamento.</div>
+  <button class="btn-go" onclick="startGame()">Iniciar simulação →</button>
+</div>
+
+<!-- ════ GAME ════ -->
+<div id="game" class="screen">
+  <div id="tb">
+    <div class="tb-l">
+      <div class="tb-badge">PALS</div>
+      <div class="tb-title" id="tb-title">Caso 1</div>
+      <div class="combo" id="combo">🔥 COMBO x<span id="combo-n">2</span></div>
+    </div>
+    <div class="tb-r">
+      <div class="tb-s"><div class="tb-s-l">Pts</div><div class="tb-s-v" id="tb-pts">0</div></div>
+      <div class="tb-s"><div class="tb-s-l">✓</div><div class="tb-s-v" id="tb-ok" style="color:var(--green)">0</div></div>
+      <div class="tb-s"><div class="tb-s-l">✗</div><div class="tb-s-v" id="tb-fail" style="color:var(--red)">0</div></div>
+      <div><div style="font-size:9px;color:var(--gray-400);font-weight:600;text-align:right;">Timer</div><div id="tb-timer">01:30</div></div>
+    </div>
+  </div>
+  <div id="prog"><div id="prog-f" style="width:0%"></div></div>
+  <div id="gbody">
+    <div id="lcol">
+      <!-- Monitor (shown only for intra-hosp) -->
+      <div id="monitor" style="display:none;">
+        <div id="mon-hdr">
+          <span class="mon-hdr-l">MONITOR CARDÍACO · PALS SIM · 25mm/s · 10mm/mV</span>
+          <span id="rhythm-badge"></span>
+        </div>
+
+        <!-- CH1: ECG DII -->
+        <div class="mon-ch">
+          <div class="mon-wave">
+            <div class="mon-wave-lbl" style="color:#00FF7F">DII</div>
+            <div class="mon-wave-speed">25 mm/s</div>
+            <canvas class="mon-c" id="c-ecg" height="64"></canvas>
+          </div>
+          <div class="mon-num">
+            <div class="mon-param" style="color:#00FF7F">FC</div>
+            <div class="mon-val" id="v-hr" style="color:#00FF7F">—</div>
+            <div class="mon-sub" style="color:#00FF7F" id="v-hr-sub">bpm</div>
+          </div>
+        </div>
+
+        <!-- CH2: SpO₂ pleth -->
+        <div class="mon-ch">
+          <div class="mon-wave">
+            <div class="mon-wave-lbl" style="color:#00CFFF">SpO₂</div>
+            <div class="mon-wave-speed">PLETH</div>
+            <canvas class="mon-c" id="c-spo2" height="44"></canvas>
+          </div>
+          <div class="mon-num">
+            <div class="mon-param" style="color:#00CFFF">SpO₂</div>
+            <div class="mon-val" id="v-spo2" style="color:#00CFFF;font-size:26px">—</div>
+            <div class="mon-unit" style="color:#00CFFF">%</div>
+          </div>
+        </div>
+
+        <!-- CH3: Capnografia EtCO₂ -->
+        <div class="mon-ch">
+          <div class="mon-wave">
+            <div class="mon-wave-lbl" style="color:#FF8C00">EtCO₂</div>
+            <div class="mon-wave-speed">CAPNO</div>
+            <canvas class="mon-c" id="c-co2" height="44"></canvas>
+          </div>
+          <div class="mon-num">
+            <div class="mon-param" style="color:#FF8C00">EtCO₂</div>
+            <div class="mon-val" id="v-etco2" style="color:#FF8C00;font-size:26px">—</div>
+            <div class="mon-unit" style="color:#FF8C00">mmHg</div>
+          </div>
+        </div>
+
+        <!-- Vitals strip: PA + FR + Temp -->
+        <div id="vstrip-bottom">
+          <div class="vb-item">
+            <div class="vb-lbl" style="color:#FF6B6B">PA</div>
+            <div class="vb-val" id="v-bp" style="color:#FF6B6B">—</div>
+            <div class="vb-unit">mmHg</div>
+            <div class="vb-sub" id="v-pam">PAM —</div>
+          </div>
+          <div class="vb-sep"></div>
+          <div class="vb-item">
+            <div class="vb-lbl" style="color:#FFD54F">FR</div>
+            <div class="vb-val" id="v-rr" style="color:#FFD54F">—</div>
+            <div class="vb-unit">irpm</div>
+          </div>
+          <div class="vb-sep"></div>
+          <div class="vb-item">
+            <div class="vb-lbl" style="color:#F06292">TEMP</div>
+            <div class="vb-val" id="v-temp" style="color:#F06292">—</div>
+            <div class="vb-unit">°C</div>
+          </div>
+          <div class="vb-sep"></div>
+          <div class="vb-item">
+            <div class="vb-lbl" style="color:#80CBC4">PESO</div>
+            <div class="vb-val" id="v-peso" style="color:#80CBC4;font-size:16px">—</div>
+            <div class="vb-unit">kg</div>
+          </div>
+        </div>
+      </div>
+      <!-- Case card -->
+      <div id="ccard">
+        <div class="cc-hdr">
+          <span class="tag tag-red" id="cc-sev">CRÍTICO</span>
+          <span class="tag tag-gray" id="cc-set">Extra-hospitalar</span>
+          <span class="tag tag-blue" id="cc-num">Caso 1/12</span>
+        </div>
+        <div class="cc-body">
+          <div class="cc-title" id="cc-title"></div>
+          <div class="cc-ctx" id="cc-ctx"></div>
+        </div>
+        <div id="phase-row"></div>
+        <div id="pt-row"><div id="pt-dot"></div><div id="pt-lbl"></div><div id="pt-bg"><div id="pt-fill"></div></div></div>
+        <div id="smini">
+          <div class="sm"><div class="sm-l">Pts</div><div class="sm-v" id="sm-pts">0</div></div>
+          <div class="sm"><div class="sm-l">Acertos</div><div class="sm-v" id="sm-ok" style="color:var(--green)">0</div></div>
+          <div class="sm"><div class="sm-l">Erros</div><div class="sm-v" id="sm-fail" style="color:var(--red)">0</div></div>
+        </div>
+      </div>
+    </div>
+    <div id="rcol">
+      <div id="rscroll">
+        <div class="s-phase" id="s-phase"></div>
+        <div class="s-q" id="s-q"></div>
+        <div class="opts" id="opt-list"></div>
+        <div class="hg" id="hst-grid" style="display:none;"></div>
+        <div class="fb" id="fb"><div class="fb-hd" id="fb-hd"></div><div class="fb-body" id="fb-body"></div><div class="fb-ref" id="fb-ref"></div></div>
+      </div>
+      <div id="rfooter">
+        <button class="btn-confirm" id="btn-confirm" onclick="confirmHst()">Confirmar</button>
+        <button class="btn-next" id="btn-next" onclick="nextStep()" disabled>Próximo →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ END ════ -->
+<div id="end" class="screen">
+  <div class="e-badge">Resultado Final · PALS 2025</div>
+  <div class="e-pts" id="e-pts">0</div>
+  <div class="e-sub" id="e-sub"></div>
+  <div class="e-grade" id="e-grade"></div>
+  <div class="e-msg" id="e-msg"></div>
+  <div class="e-tbl" id="e-tbl"></div>
+  <button class="btn-go" onclick="restartGame()">Jogar novamente</button>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════
+   ECG ENGINE — traçados fisiologicamente precisos, derivação DII
+   Escala: 1 unidade de x = 1 pixel a 25 mm/s
+   Cada ritmo é renderizado como uma sequência de pontos (x,y)
+   normalizada para amplitude 0..1, depois escalada para o canvas.
+   Ponto de referência isoelétrico = 0. Positivo = acima da linha.
+══════════════════════════════════════════════════════════════════ */
+
+// Interpola suavemente entre pontos de controle via Catmull-Rom
+function catmullRom(pts, t) {
+  const n = pts.length;
+  // t em [0,1] mapeia para todo o array
+  const seg = t * (n - 1);
+  const i = Math.floor(seg);
+  const u = seg - i;
+  const p0 = pts[Math.max(0, i-1)];
+  const p1 = pts[i];
+  const p2 = pts[Math.min(n-1, i+1)];
+  const p3 = pts[Math.min(n-1, i+2)];
+  // Catmull-Rom
+  const a = -0.5*p0[1] + 1.5*p1[1] - 1.5*p2[1] + 0.5*p3[1];
+  const b =  p0[1]    - 2.5*p1[1] + 2*p2[1]    - 0.5*p3[1];
+  const c = -0.5*p0[1] + 0.5*p2[1];
+  const d =  p1[1];
+  return a*u*u*u + b*u*u + c*u + d;
+}
+
+// Constrói uma curva a partir de pontos de controle (x normalizado 0..period, y amplitude)
+// Retorna função f(phase) -> y
+function buildCurve(ctrlPts, period) {
+  const sorted = [...ctrlPts].sort((a,b)=>a[0]-b[0]);
+  return function(phase) {
+    const p = ((phase % period) + period) % period;
+    // encontra segmento
+    let lo = 0, hi = sorted.length - 1;
+    while (lo < hi - 1) {
+      const mid = (lo + hi) >> 1;
+      if (sorted[mid][0] <= p) lo = mid; else hi = mid;
+    }
+    const x0 = sorted[lo][0], x1 = sorted[hi][0];
+    if (x1 === x0) return sorted[lo][1];
+    const t = (p - x0) / (x1 - x0);
+    // Hermite com tensão 0 (linear entre controladores, mas catmull entre todos)
+    const prevIdx = Math.max(0, lo-1);
+    const nextIdx = Math.min(sorted.length-1, hi+1);
+    const y0 = sorted[prevIdx][1], y1 = sorted[lo][1];
+    const y2 = sorted[hi][1],     y3 = sorted[nextIdx][1];
+    const m1 = 0.5*(y2 - y0);
+    const m2 = 0.5*(y3 - y1);
+    const h00 = 2*t*t*t - 3*t*t + 1;
+    const h10 = t*t*t - 2*t*t + t;
+    const h01 = -2*t*t*t + 3*t*t;
+    const h11 = t*t*t - t*t;
+    return h00*y1 + h10*m1 + h01*y2 + h11*m2;
+  };
+}
+
+/*
+  SINUSAL NORMAL (FC ~75 bpm, período 100px a 25mm/s)
+  Ondas: P pequena positiva, intervalo PR, QRS estreito (subida abrupta),
+  segmento ST isoelétrico, onda T positiva assimétrica (subida lenta, descida rápida)
+*/
+const _sinusalCtrl = [
+  [0,0],[3,0],[6,0.06],[9,0.08],[12,0.06],[15,0],[18,0],   // onda P
+  [22,0],[25,0],[28,-0.06],                                   // PR + deflexão Q mínima
+  [30,-0.08],[31.5,0],[33,1.0],[34.5,0.15],[36,-0.25],       // QRS: Q, R abrupto, S
+  [38,-0.28],[40,-0.1],[42,0],                                // retorno isoelétrico (S→isoelétrico)
+  [46,0],[50,0],                                              // segmento ST
+  [54,0.02],[58,0.18],[63,0.22],[68,0.18],[74,0.05],[78,0],  // onda T positiva assimétrica
+  [82,0],[90,0],[100,0]                                       // intervalo TP
+];
+const sinusalFn = buildCurve(_sinusalCtrl, 100);
+
+/*
+  BRADICARDIA SINUSAL (FC ~35 bpm, período 210px)
+  Mesma morfologia, período mais longo, TP muito prolongado
+*/
+const _bradCtrl = [
+  [0,0],[4,0],[8,0.07],[12,0.09],[16,0.07],[20,0],[24,0],
+  [30,0],[33,-0.07],
+  [35,-0.10],[36.5,0],[38,1.0],[39.5,0.15],[41,-0.28],
+  [43,-0.30],[46,-0.08],[49,0],
+  [54,0],[60,0],
+  [65,0.02],[70,0.20],[76,0.24],[82,0.20],[89,0.05],[94,0],
+  [100,0],[120,0],[150,0],[180,0],[210,0]
+];
+const bradicardiaFn = buildCurve(_bradCtrl, 210);
+
+/*
+  TSV (FC ~200 bpm, período 36px)
+  QRS estreito, onda P retrógrada enterrada no QRS ou logo após (não visível claramente),
+  sem onda P visível antes do QRS, T negativa ou bifásica
+*/
+const _tsvCtrl = [
+  [0,0],[1,0],
+  [2,-0.05],[3,0],[4,0.95],[5,0.12],[6,-0.30],   // QRS estreito rápido
+  [7,-0.32],[8,-0.12],[9,0],
+  [12,-0.05],[15,-0.12],[18,-0.10],[22,-0.04],[26,0], // T negativa
+  [29,0],[33,0],[36,0]
+];
+const tsvFn = buildCurve(_tsvCtrl, 36);
+
+/*
+  FV (Fibrilação Ventricular) — grosseira
+  Ondas caóticas de amplitude variável, sem complexos identificáveis.
+  Simulada com soma de senoides de frequências irracionais + ruído controlado.
+  Sem periodicidade fixa — parece genuinamente aleatória mas é determinística.
+*/
+let fvNoise = new Float32Array(1024);
+(function(){for(let i=0;i<1024;i++) fvNoise[i]=(Math.sin(i*1.618)*Math.sin(i*2.718)+Math.sin(i*.414)*0.5)*0.8;})();
+function fvFn(x, a) {
+  const xi = ((x|0) & 1023);
+  const n = fvNoise[xi];
+  // Amplitude oscilante (grosseira → coarse FV)
+  const env = 0.55 + 0.35*Math.sin(x*0.031);
+  return a * env * (
+    0.60*Math.sin(x*0.523+1.1) +
+    0.35*Math.sin(x*0.891+2.3) +
+    0.25*Math.sin(x*1.414+0.7) +
+    0.15*n
+  );
+}
+
+/*
+  TV SEM PULSO — complexos largos (> 0.12s = >3px), regulares, morfologia monomórfica.
+  QRS alargado com morfologia de BRE (bundle right block espelho):
+  deflexão inicial positiva ampla, sem onda S nítida, T negativa discordante.
+  Período 40px (FC ~187 bpm, típico de TV)
+*/
+const _tvCtrl = [
+  [0,0],[1,0],
+  [2,-0.08],[4,0],[5,0.20],[7,0.55],[9,0.85],   // subida lenta (largo) positiva
+  [11,0.90],[12,0.88],[14,0.70],[16,0.45],        // plateau — QRS alargado
+  [18,0.15],[20,-0.05],[21,-0.12],                // descida
+  [22,-0.15],[24,-0.10],[26,-0.12],[29,-0.08],    // T negativa discordante
+  [32,-0.04],[35,0],[38,0],[40,0]
+];
+const tvspFn = buildCurve(_tvCtrl, 40);
+
+/*
+  ASSISTOLIA — linha quase reta com tremor de base mínimo (artefato elétrico).
+  Sem complexos. Pequeno ruído senoidal de baixa frequência.
+*/
+let asystNoise = new Float32Array(512);
+(function(){for(let i=0;i<512;i++) asystNoise[i]=Math.sin(i*0.17)*0.012+Math.sin(i*0.043)*0.008;})();
+function assistoliaFn(x, a) {
+  return a * asystNoise[(x|0)&511];
+}
+
+/*
+  AESP — Atividade Elétrica Sem Pulso.
+  Complexos QRS ORGANIZADOS mas de baixa amplitude e morfologia aberrante:
+  QRS alargado, morfologia distorcida (como escape juncional ou idioventricular lento),
+  ausência de ondas P claramente identificáveis, T plana.
+  FC lenta (~40 bpm), período 150px
+*/
+const _aespCtrl = [
+  [0,0],[5,0],[10,0],
+  [14,0],[16,-0.04],[18,0],                      // deflexão mínima pré-QRS
+  [20,-0.05],[22,0.05],[24,0.48],                 // subida lenta (QRS alargado, baixa amplitude)
+  [26,0.50],[28,0.44],[30,0.22],[32,0.05],        // plateau baixo
+  [34,-0.12],[36,-0.14],[38,-0.08],[40,-0.02],    // S pequeno
+  [44,0],[50,0.03],[55,0.04],[60,0.02],[65,0],    // T muito baixa
+  [75,0],[100,0],[120,0],[150,0]
+];
+const aespFn = buildCurve(_aespCtrl, 150);
+
+// Mapa de ritmos
+const ECG = {
+  sinusal:    (x,a) => a * sinusalFn(x),
+  bradicardia:(x,a) => a * bradicardiaFn(x),
+  tsv:        (x,a) => a * tsvFn(x),
+  fv:         (x,a) => fvFn(x, a),
+  tvsp:       (x,a) => a * tvspFn(x),
+  assistolia: (x,a) => assistoliaFn(x, a),
+  aesp:       (x,a) => a * aespFn(x),
+};
+
+/* ── MULTI-CHANNEL RENDERER ─────────────────────────────── */
+let raf = null;
+let offsets = { ecg: 0, spo2: 0, co2: 0 };
+let curECG = 'sinusal', curV = {};
+
+// Generic channel renderer with ECG-paper grid + sweep
+function drawChannel(canvasId, fn, color, offKey, speed, baseline_ratio, amp_ratio, grid) {
+  const c = document.getElementById(canvasId);
+  if (!c) return;
+  const rect = c.getBoundingClientRect();
+  c.width  = rect.width  || 380;
+  c.height = rect.height || 64;
+  const W = c.width, H = c.height;
+  const baseline = H * baseline_ratio;
+  const amp      = H * amp_ratio;
+  const ctx = c.getContext('2d');
+  ctx.clearRect(0, 0, W, H);
+
+  // grid (only ECG gets the full milimetre paper grid)
+  if (grid) {
+    ctx.strokeStyle = 'rgba(80,20,20,0.28)'; ctx.lineWidth = 0.4;
+    for (let x = 0; x < W; x += 5)  { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+    for (let y = 0; y < H; y += 5)  { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+    ctx.strokeStyle = 'rgba(140,30,30,0.48)'; ctx.lineWidth = 0.7;
+    for (let x = 0; x < W; x += 25) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+    for (let y = 0; y < H; y += 25) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+  } else {
+    // lighter grid for pleth/capno
+    ctx.strokeStyle = 'rgba(255,255,255,0.04)'; ctx.lineWidth = 0.4;
+    for (let x = 0; x < W; x += 20) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+    for (let y = 0; y < H; y += H/3) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+  }
+
+  // isoelectric
+  ctx.strokeStyle = color.replace(')',',0.12)').replace('rgb','rgba'); ctx.lineWidth = 0.6;
+  ctx.beginPath(); ctx.moveTo(0,baseline); ctx.lineTo(W,baseline); ctx.stroke();
+
+  // trace
+  ctx.strokeStyle = color;
+  ctx.lineWidth   = 1.8;
+  ctx.shadowColor = color;
+  ctx.shadowBlur  = 3;
+  ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  ctx.beginPath();
+  const o = offsets[offKey];
+  for (let x = 0; x < W; x++) {
+    const y = baseline - fn(x + o, amp);
+    x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  }
+  ctx.stroke(); ctx.shadowBlur = 0;
+
+  // sweep mask
+  const sw = (o * speed) % W;
+  const bg = '#050709';
+  ctx.fillStyle = bg + 'ee';
+  ctx.fillRect(sw + 3, 0, W, H);
+  const grd = ctx.createLinearGradient(sw - 16, 0, sw + 3, 0);
+  grd.addColorStop(0, bg + '00');
+  grd.addColorStop(1, bg + 'ee');
+  ctx.fillStyle = grd;
+  ctx.fillRect(sw - 16, 0, 19, H);
+}
+
+// SpO₂ plethysmography — smooth dicrotic notch wave
+function spo2Wave(x, a) {
+  const period = 65; // ~92 bpm
+  const p = x % period;
+  // systolic upstroke
+  if (p < 5)  return a * 0.70 * (p / 5);
+  if (p < 9)  return a * (0.70 + 0.30 * (p-5)/4);          // peak systolic
+  if (p < 12) return a * (1.00 - 0.22 * (p-9)/3);          // rapid descent
+  if (p < 15) return a * (0.78 - 0.12 * (p-12)/3);         // dicrotic notch dip
+  if (p < 18) return a * (0.66 + 0.08 * (p-15)/3);         // dicrotic notch peak
+  if (p < 25) return a * (0.74 - 0.74 * (p-18)/7);         // diastolic descent
+  return 0;
+}
+
+// Capnography (EtCO₂) — square-ish capno wave
+function co2Wave(x, a) {
+  const period = 120; // ~50 irpm (intubated child)
+  const p = x % period;
+  if (p < 6)  return 0;                                     // inspiratory phase (flat)
+  if (p < 12) return a * 0.80 * (p-6)/6;                   // expiratory upstroke
+  if (p < 55) return a * (0.80 + 0.08*Math.sin(Math.PI*(p-12)/43)); // alveolar plateau
+  if (p < 62) return a * (0.88 - 0.88*(p-55)/7);           // inspiratory downstroke
+  return 0;
+}
+
+// PCR capno: minimal flat line (no effective ventilation / perfusion)
+function co2FlatWave(x, a) {
+  return a * 0.02 * Math.sin(x * 0.08); // ~2 mmHg noise
+}
+
+// During RCP capno: low but visible
+function co2RCPWave(x, a) {
+  const period = 120;
+  const p = x % period;
+  if (p < 6)  return 0;
+  if (p < 12) return a * 0.22 * (p-6)/6;
+  if (p < 55) return a * 0.22;
+  if (p < 62) return a * (0.22 - 0.22*(p-55)/7);
+  return 0;
+}
+
+function loopAll() {
+  const isAlive = curV && curV.hr && curV.hr !== '0' && curV.hr !== '—';
+  const isRCP   = curV && curV.etco2 === 'rcp';
+
+  // ECG
+  const ecgFn = ECG[curECG] || ECG.sinusal;
+  drawChannel('c-ecg', ecgFn, '#00FF7F', 'ecg', 1.8, 0.55, 0.40, true);
+
+  // SpO₂ pleth
+  const spo2Active = isAlive;
+  drawChannel('c-spo2',
+    spo2Active ? spo2Wave : (x,a) => a*0.015*Math.sin(x*0.05),
+    '#00CFFF', 'spo2', 1.5, 0.75, 0.55, false);
+
+  // Capnography
+  const co2fn = isAlive ? co2Wave : (isRCP ? co2RCPWave : co2FlatWave);
+  drawChannel('c-co2', co2fn, '#FF8C00', 'co2', 1.0, 0.82, 0.65, false);
+
+  offsets.ecg  = (offsets.ecg  + 2.0) % 10000;
+  offsets.spo2 = (offsets.spo2 + 1.6) % 10000;
+  offsets.co2  = (offsets.co2  + 0.9) % 10000;
+
+  raf = requestAnimationFrame(loopAll);
+}
+
+function startECG(key, vitals) {
+  curECG = key; curV = vitals || {};
+  if (raf) cancelAnimationFrame(raf);
+  offsets = { ecg: 0, spo2: 0, co2: 0 };
+  loopAll();
+}
+
+/* ── INTRO ECG ─────────────────────────────────────────── */
+let iraf = null, ioff = 0;
+function introECG() {
+  const c = document.getElementById('i-canvas');
+  if (!c) return;
+  const rect = c.getBoundingClientRect();
+  c.width  = rect.width  || 500;
+  c.height = rect.height || 64;
+  const W = c.width, H = c.height;
+  const baseline = H * 0.55, amp = H * 0.38;
+  const ctx = c.getContext('2d');
+  ctx.clearRect(0, 0, W, H);
+  // grade sutil
+  ctx.strokeStyle = 'rgba(80,20,20,0.25)'; ctx.lineWidth = 0.5;
+  for (let x = 0; x < W; x += 5)  { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+  for (let y = 0; y < H; y += 5)  { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+  ctx.strokeStyle = 'rgba(120,25,25,0.40)'; ctx.lineWidth = 0.7;
+  for (let x = 0; x < W; x += 25) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+  for (let y = 0; y < H; y += 25) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+  // traçado
+  ctx.strokeStyle = 'rgba(0,255,127,0.75)';
+  ctx.lineWidth = 1.7;
+  ctx.shadowColor = '#00FF7F'; ctx.shadowBlur = 5;
+  ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  ctx.beginPath();
+  for (let x = 0; x < W; x++) {
+    const y = baseline - sinusalFn(x + ioff) * amp;
+    x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  }
+  ctx.stroke(); ctx.shadowBlur = 0;
+  ioff = (ioff + 2) % 10000;
+  iraf = requestAnimationFrame(introECG);
+}
+
+/* ══════════════════════════════════════════════════════
+   VITALS — atualiza todos os campos do monitor
+══════════════════════════════════════════════════════ */
+function setV(v) {
+  curV = v || {};
+  const set = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val ?? '—'; };
+
+  // FC
+  set('v-hr', v.hr);
+  const hrEl = document.getElementById('v-hr');
+  if (hrEl) {
+    const hrN = parseInt(v.hr);
+    if (v.hr === '0' || v.hr === '—') { hrEl.style.color = '#FF4560'; hrEl.classList.add('alarm'); }
+    else if (!isNaN(hrN) && (hrN < 60 || hrN > 160)) { hrEl.style.color = '#FFD54F'; hrEl.classList.add('alarm'); }
+    else { hrEl.style.color = '#00FF7F'; hrEl.classList.remove('alarm'); }
+  }
+
+  // SpO₂
+  set('v-spo2', v.spo2 && v.spo2 !== '—' ? v.spo2 : '—');
+  const spo2El = document.getElementById('v-spo2');
+  if (spo2El) {
+    const sN = parseInt(v.spo2);
+    if (v.spo2 === '—') { spo2El.style.color = '#4a6a7a'; spo2El.classList.remove('alarm'); }
+    else if (!isNaN(sN) && sN < 90) { spo2El.style.color = '#FF4560'; spo2El.classList.add('alarm'); }
+    else if (!isNaN(sN) && sN < 94) { spo2El.style.color = '#FFD54F'; spo2El.classList.remove('alarm'); }
+    else { spo2El.style.color = '#00CFFF'; spo2El.classList.remove('alarm'); }
+  }
+
+  // PA sistólica/diastólica + PAM calculada
+  const bpRaw = v.bp || '—';
+  set('v-bp', bpRaw);
+  const pamEl = document.getElementById('v-pam');
+  if (pamEl) {
+    if (bpRaw !== '—' && bpRaw.includes('/')) {
+      const parts = bpRaw.split('/');
+      const sys = parseInt(parts[0]), dia = parseInt(parts[1]);
+      if (!isNaN(sys) && !isNaN(dia)) {
+        const pam = Math.round((sys + 2 * dia) / 3);
+        pamEl.textContent = `PAM ${pam}`;
+      }
+    } else pamEl.textContent = 'PAM —';
+  }
+  const bpEl = document.getElementById('v-bp');
+  if (bpEl && bpRaw !== '—' && bpRaw.includes('/')) {
+    const sys = parseInt(bpRaw.split('/')[0]);
+    if (!isNaN(sys) && sys < 70) { bpEl.style.color = '#FF4560'; }
+    else if (!isNaN(sys) && sys < 90) { bpEl.style.color = '#FFD54F'; }
+    else { bpEl.style.color = '#FF6B6B'; }
+  }
+
+  // FR
+  set('v-rr', v.rr);
+  const rrEl = document.getElementById('v-rr');
+  if (rrEl) {
+    const rrN = parseInt(v.rr);
+    if (v.rr === '0') { rrEl.style.color = '#FF4560'; rrEl.classList.add('alarm'); }
+    else if (!isNaN(rrN) && (rrN < 10 || rrN > 50)) { rrEl.style.color = '#FFD54F'; rrEl.classList.remove('alarm'); }
+    else { rrEl.style.color = '#FFD54F'; rrEl.classList.remove('alarm'); }
+  }
+
+  // Temperatura
+  set('v-temp', v.temp || '—');
+  const tempEl = document.getElementById('v-temp');
+  if (tempEl) {
+    const tN = parseFloat(v.temp);
+    if (!isNaN(tN) && tN > 37.5) { tempEl.style.color = '#FF4560'; }
+    else if (!isNaN(tN) && tN < 36.0) { tempEl.style.color = '#00CFFF'; }
+    else { tempEl.style.color = '#F06292'; }
+  }
+
+  // Peso
+  set('v-peso', v.peso || '—');
+
+  // EtCO₂
+  set('v-etco2', v.etco2 === 'rcp' ? '< 10' : (v.etco2 || '—'));
+  const co2El = document.getElementById('v-etco2');
+  if (co2El) {
+    const cN = parseInt(v.etco2);
+    if (v.etco2 === 'rcp' || (!isNaN(cN) && cN < 10)) { co2El.style.color = '#FF4560'; co2El.classList.add('alarm'); }
+    else if (!isNaN(cN) && (cN < 35 || cN > 45)) { co2El.style.color = '#FFD54F'; co2El.classList.remove('alarm'); }
+    else { co2El.style.color = '#FF8C00'; co2El.classList.remove('alarm'); }
+  }
+
+  // Rhythm badge
+  const rb = document.getElementById('rhythm-badge');
+  if (rb && v.rl) {
+    rb.textContent = v.rl;
+    rb.style.cssText = `background:${v.rb||'rgba(0,255,127,.1)'};color:${v.rc||'#00FF7F'};border:1px solid ${v.rbd||'rgba(0,255,127,.3)'}`;
+  }
+
+  // HR sub
+  const hrSubEl = document.getElementById('v-hr-sub');
+  if (hrSubEl) {
+    hrSubEl.textContent = v.hr === '0' ? 'PCR' : v.hr === '—' ? 'bpm' : 'bpm';
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   TIMER
+══════════════════════════════════════════════════════ */
+let tSec=90,tInt=null;
+function startTimer(s){clearInterval(tInt);tSec=s;renderT();tInt=setInterval(()=>{tSec--;renderT();if(tSec<=0){clearInterval(tInt);onTO();}},1000);}
+function pauseTimer(){clearInterval(tInt);}
+function renderT(){
+  const e=document.getElementById('tb-timer');if(!e)return;
+  const m=Math.floor(tSec/60),s=tSec%60;
+  e.textContent=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  e.style.color=tSec<=10?'var(--red)':tSec<=25?'var(--amber)':'var(--gray-900)';
+}
+function onTO(){
+  if(G.ans)return;G.ans=true;disOpts();
+  showFB('timeout','⏱ TEMPO ESGOTADO','Atrasos em emergências pediátricas aumentam mortalidade.','PALS 2025: reconhecimento rápido e sequência terapêutica são determinantes do desfecho.');
+  G.pts=Math.max(0,G.pts-5);G.fail++;G.combo=0;
+  G.res.push({t:`${G.ci+1}. ${getS().phase}`,ok:false,to:true});
+  updScore();document.getElementById('btn-next').disabled=false;
+}
+
+/* ══════════════════════════════════════════════════════
+   CASES — 12 casos, 42 steps
+══════════════════════════════════════════════════════ */
+const CASES=[
+
+/* ── 1. EXTRA · Lactente PCR ──────────────────────── */
+{t:'Lactente 7m · PCR Extra-hospitalar',set:'Extra-hospitalar',sev:'PCR',sevTag:'red',ecg:null,
+v:null,
+ctx:'Parque público. <strong>Lactente de 7 meses (8 kg)</strong>, irresponsivo, hipotônico, sem choro. Você é o único profissional de saúde no local. Sem nenhum equipamento disponível.',
+sp:20,sl:'PCR sem intervenção',
+steps:[
+  {ph:'AVALIAÇÃO INICIAL',q:'Primeiro passo antes de qualquer manobra?',type:'c',
+  o:[{t:'Compressões torácicas imediatamente',c:false},{t:'Checar responsividade + respiração + pulso braquial (≤ 10 seg)',c:true},{t:'Acionar SAMU (192) antes de avaliar',c:false},{t:'2 ventilações de resgate e checar expansão',c:false}],
+  pts:10,pen:5,ok:'Confirmar PCR: responsividade + respiração + pulso braquial (lactente) em ≤ 10 seg. Pulso central do lactente = braquial.',fail:'Antes de qualquer manobra: confirmar PCR. Pulso central do lactente = braquial, não carotídeo.',ref:'PALS 2025: checar ≤ 10 seg. Dúvida ou ausência → RCP imediata.',sa:22,sl2:'PCR confirmada'},
+  {ph:'ACIONAMENTO · 1 SOCORRISTA',q:'Sozinho com lactente em PCR — o que fazer PRIMEIRO?',type:'c',
+  o:[{t:'RCP por 2 min antes de acionar o SAMU',c:true},{t:'Acionar SAMU antes de qualquer manobra',c:false},{t:'Buscar DEA antes de iniciar RCP',c:false},{t:'Pedir a leigo que inicie RCP enquanto liga',c:false}],
+  pts:10,pen:5,ok:'Lactente = causa hipóxica. RCP 2 min ANTES do SAMU. Exceção específica do PALS 2025.',fail:'Lactente/afogamento/trauma → RCP 2 min antes do SAMU. Criança maior sem causa hipóxica → SAMU primeiro.',ref:'PALS 2025: RCP 2 min → SAMU para lactente, afogamento e trauma. Lógica: causa hipóxica responde ao RCP imediato.',sa:26,sl2:'RCP iniciada · SAMU acionado'},
+  {ph:'TÉCNICA DE COMPRESSÃO · PALS 2025',q:'Como comprimir o tórax deste lactente estando SOZINHO?',type:'c',
+  o:[{t:'2 dedos (indicador + médio) no centro do tórax',c:false},{t:'Calcanhar de 1 mão aberta no 1/3 inferior do esterno',c:true},{t:'2 polegares + mãos abraçando o tórax',c:false},{t:'Punho fechado no esterno',c:false}],
+  pts:15,pen:10,ok:'PALS 2025 removeu os 2 dedos. 1 socorrista: calcanhar de 1 mão (open palm). 2 socorristas: 2 polegares + abraço (preferencial).',fail:'Técnica dos 2 dedos REMOVIDA — falha em atingir ≥ 4 cm. 1 socorrista: calcanhar de 1 mão.',ref:'PALS 2025: 2 dedos eliminados. 1 socorrista → calcanhar de 1 mão. 2 socorristas → 2 polegares encircling. Prof. ≥ 4 cm. FC 100–120/min.',sa:36,sl2:'RCP com técnica correta'},
+  {ph:'RELAÇÃO C:V',q:'Relação compressão:ventilação com 1 socorrista?',type:'c',
+  o:[{t:'15:2',c:false},{t:'30:2',c:true},{t:'Compressões contínuas sem ventilação',c:false},{t:'30:1',c:false}],
+  pts:10,pen:5,ok:'1 socorrista = 30:2 sempre, leigo ou profissional.',fail:'15:2 = 2 profissionais sem VA avançada. 1 socorrista: sempre 30:2.',ref:'PALS 2025: 1 socorrista = 30:2 | 2 profissionais = 15:2 | IOT = compressões contínuas + 10 vent/min.',sa:48,sl2:'RCP de alta qualidade'}
+]},
+
+/* ── 2. EXTRA · Criança afogamento ───────────────── */
+{t:'Criança 6a · Afogamento PCR',set:'Extra-hospitalar',sev:'PCR HIPÓXICA',sevTag:'red',ecg:null,
+v:null,
+ctx:'Piscina pública. <strong>Criança de 6 anos (20 kg)</strong> retirada da água após imersão de ≈ 3 minutos. Inconsciente, apneica, sem pulso carotídeo. Você é o único socorrista presente.',
+sp:15,sl:'PCR hipóxica · afogamento',
+steps:[
+  {ph:'ACIONAMENTO · AFOGAMENTO',q:'PCR por afogamento, sozinho. Qual a sequência correta?',type:'c',
+  o:[{t:'Acionar SAMU e aguardar — nunca iniciar sem equipamento',c:false},{t:'RCP 2 min (5 ciclos) → depois acionar SAMU',c:true},{t:'Acionar SAMU primeiro, depois iniciar RCP',c:false},{t:'Ventilações de resgate apenas, sem compressões',c:false}],
+  pts:10,pen:5,ok:'Afogamento = causa hipóxica = mesma regra do lactente: RCP 2 min antes de acionar o SAMU.',fail:'Afogamento é causa hipóxica. RCP 2 min → SAMU. A ventilação é especialmente crítica neste contexto.',ref:'PALS 2025: afogamento → RCP 2 min antes do SAMU. Ventilação é prioritária — causa primária é hipóxia.',sa:20,sl2:'RCP iniciada · SAMU acionado'},
+  {ph:'VENTILAÇÕES INICIAIS · AFOGAMENTO',q:'Na PCR por afogamento, as ventilações devem ser iniciadas:',type:'c',
+  o:[{t:'Apenas após 30 compressões — sequência C-A-B padrão',c:false},{t:'Imediatamente ao identificar a apneia — 5 ventilações de resgate antes das compressões',c:true},{t:'Nunca — compressões contínuas sem ventilação',c:false},{t:'Após IOT obrigatório antes de qualquer outra manobra',c:false}],
+  pts:15,pen:10,ok:'Afogamento é exceção ao C-A-B: iniciar com 5 ventilações de resgate antes das compressões. Hipóxia é a causa — ventilação é prioridade.',fail:'Afogamento é exceção: 5 ventilações ANTES das compressões. Hipóxia é a causa primária — oxigenar primeiro.',ref:'PALS 2025: afogamento → 5 ventilações iniciais de resgate → C-A-B. Diferente da PCR cardíaca adulto.',sa:28,sl2:'Ventilações iniciadas'},
+  {ph:'RELAÇÃO C:V E FREQUÊNCIA',q:'Relação C:V e profundidade de compressão para criança de 6 anos (1 socorrista):',type:'c',
+  o:[{t:'30:2 · profundidade ≥ 5 cm · frequência 100–120/min',c:true},{t:'15:2 · profundidade ≥ 4 cm · frequência 80–100/min',c:false},{t:'30:2 · profundidade ≥ 3 cm · frequência 120–140/min',c:false},{t:'15:2 · profundidade ≥ 5 cm · frequência 100–120/min',c:false}],
+  pts:10,pen:5,ok:'Criança > 1 ano, 1 socorrista: 30:2, profundidade ≥ 5 cm (1/3 diâmetro AP), frequência 100–120/min.',fail:'1 socorrista: 30:2. Criança > 1 ano: profundidade ≥ 5 cm. Frequência 100–120/min. Retorno torácico completo.',ref:'PALS 2025: criança > 1 ano, prof. ≥ 5 cm. Lactente: ≥ 4 cm. Fração de compressão > 60%.',sa:40,sl2:'RCP de alta qualidade'}
+]},
+
+/* ── 3. EXTRA · Desengasgo lactente ──────────────── */
+{t:'Lactente 4m · Obstrução OVACE',set:'Extra-hospitalar',sev:'URGÊNCIA',sevTag:'amber',ecg:null,
+v:null,
+ctx:'Consultório médico. <strong>Lactente de 4 meses</strong> durante consulta. Mãe relata engasgo súbito ao amamentar. Bebê com tosse fraca, cianose perioral progressiva, sem choro audível. <em>Obstrução grave de via aérea.</em>',
+sp:30,sl:'OVACE grave · cianose',
+steps:[
+  {ph:'OVACE GRAVE · LACTENTE',q:'Lactente com tosse fraca, cianose, sem choro. Manobra de desobstrução?',type:'c',
+  o:[{t:'Manobra de Heimlich (compressões abdominais)',c:false},{t:'5 golpes dorsais + 5 compressões torácicas alternados',c:true},{t:'Manobra de Heimlich + golpes dorsais simultâneos',c:false},{t:'Varredura digital às cegas na orofaringe',c:false}],
+  pts:15,pen:10,ok:'Lactente: 5 golpes dorsais (calcanhar da mão entre escápulas, cabeça baixa) + 5 compressões torácicas. Alternar até desobstruir ou inconsciência.',fail:'Heimlich é para crianças > 1 ano. Lactente: 5 golpes dorsais + 5 compressões torácicas. Nunca varredura digital às cegas.',ref:'PALS 2025: OVACE lactente = 5 golpes dorsais + 5 compressões torácicas. Repetir até resolução ou PCR.',sa:40,sl2:'Manobras iniciadas'},
+  {ph:'OVACE · LACTENTE INCONSCIENTE',q:'Após 3 ciclos, lactente fica inconsciente. Próxima ação?',type:'c',
+  o:[{t:'Continuar golpes dorsais e compressões torácicas',c:false},{t:'Iniciar RCP · A cada abertura de VA verificar o objeto antes de ventilar',c:true},{t:'Tentar ventilação forçada imediatamente',c:false},{t:'Manobra de Heimlich agora que está inconsciente',c:false}],
+  pts:10,pen:5,ok:'Lactente inconsciente por OVACE → RCP. A cada abertura de VA (etapa A do C-A-B), verificar visualmente se o objeto está visível antes de ventilar. Nunca varredura digital às cegas.',fail:'Inconsciência por OVACE → RCP. Não continuar golpes/compressões de desobstrução. Checar VA a cada ciclo.',ref:'PALS 2025: OVACE + inconsciência → RCP padrão. A cada abertura de VA: verificar objeto visível. Remover somente se visível.',sa:50,sl2:'RCP iniciada · VA monitorada'}
+]},
+
+/* ── 4. INTRA · FV ────────────────────────────────── */
+{t:'Criança 4a · FV Intra-hospitalar',set:'Intra-hospitalar',sev:'PCR CHOCÁVEL',sevTag:'red',ecg:'fv',
+v:{hr:'—',spo2:'—',bp:'—',rr:'0',temp:'36.5',peso:'16',etco2:'rcp',rl:'IDENTIFIQUE',rc:'#FFD54F',rb:'rgba(255,213,79,.1)',rbd:'rgba(255,213,79,.3)'},
+ctx:'UE pediátrica. <strong>Criança 4 anos (16 kg)</strong> em PCR. Monitor conectado. Equipe disponível. Acesso IV sendo puncionado. <em>Analise o traçado antes de responder.</em>',
+sp:18,sl:'PCR · ritmo no monitor',
+steps:[
+  {ph:'IDENTIFICAÇÃO E 1ª CONDUTA',q:'Traçado no monitor. Criança sem pulso. Conduta IMEDIATA?',type:'c',
+  o:[{t:'Adrenalina 0,16 mg IV antes do choque',c:false},{t:'Desfibrilar 2 J/kg = 32 J imediatamente',c:true},{t:'RCP 2 min antes de desfibrilar',c:false},{t:'Amiodarona 80 mg IV antes do choque',c:false}],
+  pts:20,pen:15,ok:'Traçado = FV. Ritmo chocável. Desfibrilação IMEDIATA. 1º choque: 2 J/kg = 32 J para 16 kg.',fail:'FV = ritmo chocável = desfibrilação imediata. Adrenalina só após 2ª desfibrilação sem sucesso.',ref:'PALS 2025: FV/TV sem pulso → 2 J/kg imediatamente → RCP 2 min → checar → 4 J/kg → adrenalina após 2ª defib → amiodarona após 3ª.',
+  va:{hr:'—',spo2:'—',bp:'—',rr:'0',rl:'FV · CHOCÁVEL',rc:'#FF4560',rb:'rgba(255,69,96,.1)',rbd:'rgba(255,69,96,.3)'},sa:22,sl2:'1º choque 32 J'},
+  {ph:'PÓS-CHOQUE IMEDIATO',q:'32 J administrados. FV persiste. O que fazer AGORA?',type:'c',
+  o:[{t:'Checar pulso imediatamente após o choque',c:false},{t:'RCP IMEDIATA por 2 min sem pausar para checar',c:true},{t:'Adrenalina 0,16 mg IV — choque falhou',c:false},{t:'2º choque 4 J/kg imediatamente',c:false}],
+  pts:15,pen:10,ok:'Após choque: RCP IMEDIATA 2 min. Nunca pausar para checar imediatamente — aumenta no-flow time.',fail:'RCP imediata pós-choque. Checar ritmo somente após 2 min de RCP.',ref:'PALS 2025: pausa pós-choque < 5 seg. RCP 2 min → checar → se FV: 4 J/kg. Fração de compressão > 60%.',
+  va:{hr:'—',spo2:'—',bp:'—',rr:'0',rl:'FV · RCP EM CURSO',rc:'#FF4560',rb:'rgba(255,69,96,.1)',rbd:'rgba(255,69,96,.3)'},sa:24,sl2:'RCP pós-choque'},
+  {ph:'ADRENALINA · TIMING CHOCÁVEL',q:'2 choques realizados (32 J e 64 J). FV persiste. IV obtido. Qual medicação AGORA?',type:'c',
+  o:[{t:'Amiodarona 80 mg IV (5 mg/kg)',c:false},{t:'Adrenalina 0,16 mg IV (0,01 mg/kg)',c:true},{t:'Vasopressina 0,4 U/kg IV',c:false},{t:'Lidocaína como 1ª escolha antes da amiodarona',c:false}],
+  pts:15,pen:10,ok:'Após 2ª desfibrilação sem sucesso → adrenalina 0,01 mg/kg = 0,16 mg para 16 kg. Amiodarona só após 3ª desfibrilação.',fail:'Sequência: choque → choque → ADRENALINA após 2ª → choque → AMIODARONA após 3ª. Vasopressina REMOVIDA.',ref:'PALS 2025: adrenalina 0,01 mg/kg (máx 1 mg) após 2ª defib. Amiodarona 5 mg/kg (máx 300 mg) após 3ª. Vasopressina eliminada.',
+  va:{hr:'—',spo2:'—',bp:'—',rr:'0',rl:'FV · ADRENALINA',rc:'#FF4560',rb:'rgba(255,69,96,.1)',rbd:'rgba(255,69,96,.3)'},sa:26,sl2:'Adrenalina administrada'},
+  {ph:'ADRENALINA · REPETIÇÃO',q:'Adrenalina administrada. RCP em curso. Quando repetir a adrenalina?',type:'c',
+  o:[{t:'A cada 5–10 minutos',c:false},{t:'A cada 3–5 minutos',c:true},{t:'Dose única — não repetir em PCR pediátrica',c:false},{t:'Somente após ROSC frustrado por 10 min',c:false}],
+  pts:10,pen:5,ok:'Adrenalina se repete a cada 3–5 minutos durante toda a RCP, para ritmos chocáveis e não chocáveis.',fail:'Adrenalina 0,01 mg/kg a cada 3–5 min durante RCP. Não existe dose única.',ref:'PALS 2025: adrenalina 0,01 mg/kg IV/IO a cada 3–5 min. Dose máxima única: 1 mg. Pode repetir indefinidamente enquanto houver PCR.',
+  va:{hr:'—',spo2:'—',bp:'—',rr:'0',rl:'FV · CICLOS DE RCP',rc:'#FF4560',rb:'rgba(255,69,96,.1)',rbd:'rgba(255,69,96,.3)'},sa:28,sl2:'Ciclos de RCP + adrenalina'},
+  {ph:'FV REFRATÁRIA · ANTIARRÍTMICO',q:'3ª desfibrilação sem sucesso. Qual antiarrítmico e dose exata?',type:'c',
+  o:[{t:'Amiodarona 5 mg/kg IV (80 mg) OU Lidocaína 1 mg/kg IV (16 mg)',c:true},{t:'Adenosina 0,1 mg/kg IV antes da amiodarona',c:false},{t:'Vasopressina 0,4 U/kg IV',c:false},{t:'Atropina 0,02 mg/kg IV',c:false}],
+  pts:10,pen:5,ok:'FV refratária após 3ª defib → amiodarona 5 mg/kg (80 mg) ou lidocaína 1 mg/kg (16 mg) como alternativa equivalente.',fail:'Amiodarona 5 mg/kg ou lidocaína 1 mg/kg após 3ª defib. Adenosina = TSV com pulso. Vasopressina removida.',ref:'PALS 2025: amiodarona 5 mg/kg (máx 300 mg) OU lidocaína 1 mg/kg IV/IO após 3ª desfibrilação. Classe IIa equivalentes.',
+  va:{hr:'—',spo2:'—',bp:'—',rr:'0',rl:'FV · AMIODARONA',rc:'#FF4560',rb:'rgba(255,69,96,.1)',rbd:'rgba(255,69,96,.3)'},sa:45,sl2:'Amiodarona administrada'}
+]},
+
+/* ── 5. INTRA · Assistolia ────────────────────────── */
+{t:'Criança 5a · Assistolia + GEA',set:'Intra-hospitalar',sev:'PCR NÃO CHOCÁVEL',sevTag:'red',ecg:'assistolia',
+v:{hr:'0',spo2:'—',bp:'—',rr:'0',temp:'36.8',peso:'18',etco2:'rcp',rl:'IDENTIFIQUE',rc:'#A78BFA',rb:'rgba(167,139,250,.1)',rbd:'rgba(167,139,250,.3)'},
+ctx:'Criança de <strong>5 anos (18 kg)</strong> internada por GEA grave há 3 dias. Em avaliação rotineira: sem pulso, inconsciente. Monitor conectado. <em>Analise o traçado.</em>',
+sp:16,sl:'PCR · traçado no monitor',
+steps:[
+  {ph:'IDENTIFICAÇÃO E ADRENALINA · PALS 2025',q:'Traçado identificado. AESP ou assistolia? Quando dar adrenalina?',type:'c',
+  o:[{t:'Assistolia · adrenalina após 2 ciclos de RCP (4 min)',c:false},{t:'Assistolia · adrenalina o mais precocemente possível (primeiros 3–5 min)',c:true},{t:'FV fina · desfibrilar 2 J/kg antes de qualquer droga',c:false},{t:'Indeterminado · aguardar confirmação em 2 derivações',c:false}],
+  pts:20,pen:10,ok:'Traçado = assistolia (linha reta com ruído de base). Ritmo NÃO chocável. MAIOR mudança PALS 2025: adrenalina PRECOCE — primeiros 3–5 min.',fail:'Assistolia = não chocável. PALS 2025: adrenalina precoce, não aguardar ciclos. Cada minuto reduz ROSC.',ref:'PALS 2025: não chocável → adrenalina precoce Classe IIa. Metanálise 7 estudos: menor TTF = maior ROSC. 0,01 mg/kg a cada 3–5 min.',
+  va:{hr:'0',spo2:'—',bp:'—',rr:'0',rl:'ASSISTOLIA · NÃO CHOCÁVEL',rc:'#FF4560',rb:'rgba(255,69,96,.1)',rbd:'rgba(255,69,96,.3)'},sa:20,sl2:'Adrenalina precoce'},
+  {ph:'DOSE DE ADRENALINA · PESO',q:'Adrenalina na criança de 18 kg. Dose correta?',type:'c',
+  o:[{t:'0,18 mg IV (0,01 mg/kg)',c:true},{t:'0,9 mg IV (0,05 mg/kg)',c:false},{t:'1 mg IV — dose fixa em PCR',c:false},{t:'0,36 mg IV (0,02 mg/kg)',c:false}],
+  pts:15,pen:10,ok:'0,01 mg/kg × 18 kg = 0,18 mg IV/IO. Dose máxima por administração: 1 mg. Repetir a cada 3–5 min.',fail:'Dose: 0,01 mg/kg × peso. 18 kg = 0,18 mg. Não usar dose fixa de 1 mg em crianças.',ref:'PALS 2025: adrenalina 0,01 mg/kg IV/IO (máx 1 mg/dose) a cada 3–5 min. Não há limite de número de doses durante RCP.',
+  va:{hr:'0',spo2:'—',bp:'—',rr:'0',rl:'ASSISTOLIA · RCP ATIVA',rc:'#FF4560',rb:'rgba(255,69,96,.1)',rbd:'rgba(255,69,96,.3)'},sa:22,sl2:'Dose correta'},
+  {ph:'ACESSO VASCULAR · HIERARQUIA',q:'2 tentativas de IV falharam em 80 seg. Hierarquia PALS 2025?',type:'c',
+  o:[{t:'IO e IV são equivalentes — IO imediatamente',c:false},{t:'IO na tíbia proximal — IV falhou em 2 tentativas/90 seg',c:true},{t:'3 tentativas de IV antes de escalar',c:false},{t:'CVC obrigatório em PCR intra-hospitalar',c:false}],
+  pts:10,pen:5,ok:'PALS 2025: IV preferencial (maior ROSC), mas após 2 tentativas ou 90 seg → IO imediatamente. Tíbia proximal: 1–2 cm abaixo da tuberosidade.',fail:'PALS 2025: IO não é mais equivalente ao IV — menor ROSC. IV é preferencial. Após 2 tentativas/90 seg → IO sem hesitar.',ref:'PALS 2025: IV preferencial → IO após 2 tentativas/90 seg. Sítio: tíbia proximal. Mesmas doses e vias do IV.',
+  va:{hr:'0',spo2:'—',bp:'—',rr:'0',rl:'ASSISTOLIA · IO INSTALADO',rc:'#FF4560',rb:'rgba(255,69,96,.1)',rbd:'rgba(255,69,96,.3)'},sa:24,sl2:'Acesso IO instalado'},
+  {ph:'5H5T · GEA GRAVE',q:'GEA 3 dias + oligúria. Causas reversíveis mais prováveis neste caso:',type:'hst',
+  hC:['Hipóxia','Hipovolemia','Hipo/Hiperpotassemia','Hidrogênio (acidose)'],
+  hI:[{n:'Hipóxia',g:'H',h:'SpO₂ ausente'},{n:'Hipovolemia',g:'H',h:'GEA 3 dias + oligúria'},{n:'Hipotermia',g:'H',h:'Possível'},{n:'Hipo/Hiperpotassemia',g:'H',h:'Perdas GI intensas'},{n:'Hidrogênio (acidose)',g:'H',h:'Hipoperfusão'},{n:'Tensão no tórax (PTX)',g:'T',h:'Sem dados'},{n:'Tamponamento',g:'T',h:'Sem dados'},{n:'Tóxicos',g:'T',h:'Sem exposição'},{n:'Trombose',g:'T',h:'Improvável'},{n:'Trauma',g:'T',h:'Sem mecanismo'}],
+  pts:15,pen:0,ok:'GEA grave → Hipóxia, Hipovolemia (principal), Hipopotassemia e Acidose metabólica. Tratar em paralelo com RCP.',fail:'GEA → Hipovolemia (causa principal), Hipopotassemia (K⁺ nas fezes), Acidose. Hipóxia sempre presente em PCR.',ref:'PALS 2025: 5H5T em paralelo com RCP. Hipovolemia → 20 mL/kg SF. Acidose grave → bicarbonato 1 mEq/kg se pH < 7,10.',
+  va:{hr:'0',spo2:'—',bp:'—',rr:'0',rl:'ASSISTOLIA · 5H5T',rc:'#FF4560',rb:'rgba(255,69,96,.1)',rbd:'rgba(255,69,96,.3)'},sa:28,sl2:'Causas identificadas'}
+]},
+
+/* ── 6. INTRA · AESP ─────────────────────────────── */
+{t:'Adolescente 14a · AESP Hipovolemia',set:'Intra-hospitalar',sev:'PCR NÃO CHOCÁVEL',sevTag:'red',ecg:'aesp',
+v:{hr:'0',spo2:'—',bp:'—',rr:'0',temp:'36.2',peso:'50',etco2:'rcp',rl:'IDENTIFIQUE',rc:'#FFD54F',rb:'rgba(255,213,79,.1)',rbd:'rgba(255,213,79,.3)'},
+ctx:'Adolescente de <strong>14 anos (50 kg)</strong>, pós-operatório de apendicectomia. Sangramento ativo visualizado. Inconsciente, sem pulso. Monitor conectado. <em>Identifique o traçado.</em>',
+sp:16,sl:'PCR · traçado no monitor',
+steps:[
+  {ph:'AESP VS ASSISTOLIA',q:'Traçado: complexos QRS visíveis, regulares, lentos, SEM pulso. Diagnóstico?',type:'c',
+  o:[{t:'TV sem pulso — desfibrilar 2 J/kg imediatamente',c:false},{t:'AESP — ritmo não chocável, adrenalina precoce + RCP',c:true},{t:'FV fina — desfibrilar',c:false},{t:'Bradicardia com pulso — atropina',c:false}],
+  pts:20,pen:15,ok:'AESP: complexos QRS organizados + sem pulso. Não chocável. Adrenalina precoce + RCP + tratar causa.',fail:'AESP: complexos presentes + sem pulso = não chocável. TV sem pulso: complexos LARGOS + rápidos + sem pulso = chocável.',ref:'PALS 2025: AESP = não chocável. Diferença da TV sem pulso: AESP tem morfologia organizada (pode ser estreita ou larga mas lenta). Causa mais comum: hipovolemia.',
+  va:{hr:'0',spo2:'—',bp:'—',rr:'0',rl:'AESP · NÃO CHOCÁVEL',rc:'#A78BFA',rb:'rgba(167,139,250,.1)',rbd:'rgba(167,139,250,.3)'},sa:18,sl2:'AESP identificada'},
+  {ph:'CAUSA PRIMÁRIA · AESP',q:'Pós-op de apendicectomia com sangramento ativo. Qual causa reversível principal?',type:'c',
+  o:[{t:'Hipotermia — temperatura baixa no pós-op',c:false},{t:'Hipovolemia — sangramento ativo como causa primária',c:true},{t:'Hidrogênio (acidose) — causa mais comum de AESP',c:false},{t:'Trombose pulmonar — TEP pós-operatório',c:false}],
+  pts:15,pen:10,ok:'Sangramento ativo + AESP = hipovolemia como causa primária. Tratar com reposição volêmica agressiva em paralelo com RCP.',fail:'Sangramento ativo é a pista: hipovolemia causa AESP. Tratar a causa é fundamental — RCP sozinha não reverte AESP hipovolêmica.',ref:'PALS 2025: AESP → sempre investigar causa. Hipovolemia = T na lista (Tensão no tórax, Tamponamento, Tóxicos, Trombose) — não, é H (Hipovolemia). Manejo: volume + hemostasia.',
+  va:{hr:'0',spo2:'—',bp:'—',rr:'0',rl:'AESP · HIPOVOLEMIA',rc:'#A78BFA',rb:'rgba(167,139,250,.1)',rbd:'rgba(167,139,250,.3)'},sa:22,sl2:'Causa identificada'},
+  {ph:'ADRENALINA + VOLUME · AESP',q:'Adrenalina 0,01 mg/kg administrada. Conduta adicional para AESP hipovolêmica?',type:'c',
+  o:[{t:'Aguardar resposta à adrenalina antes de dar volume',c:false},{t:'Bolus 20 mL/kg SF 0,9% imediatamente, em paralelo com RCP',c:true},{t:'Nenhum volume — risco de sobrecarga em PCR',c:false},{t:'Dose dupla de adrenalina pela hipovolemia',c:false}],
+  pts:10,pen:5,ok:'AESP hipovolêmica: volume EM PARALELO com RCP e adrenalina. Bolus 20 mL/kg SF. A causa precisa ser tratada para ROSC.',fail:'AESP por hipovolemia não reverte só com adrenalina. Bolus de volume em paralelo é obrigatório.',ref:'PALS 2025: AESP → tratar causa em paralelo com RCP. Hipovolemia → 20 mL/kg. Tamponamento → pericardiocentese. PTX → descompressão.',
+  va:{hr:'0',spo2:'—',bp:'—',rr:'0',rl:'AESP · VOLUME + ADRENALINA',rc:'#A78BFA',rb:'rgba(167,139,250,.1)',rbd:'rgba(167,139,250,.3)'},sa:26,sl2:'Volume + adrenalina'}
+]},
+
+/* ── 7. INTRA · Bradicardia ──────────────────────── */
+{t:'Criança 5a · Bradicardia Sintomática',set:'Intra-hospitalar',sev:'INSTÁVEL',sevTag:'amber',ecg:'bradicardia',
+v:{hr:'34',spo2:'80',bp:'58/36',rr:'7',temp:'34.2',peso:'18',etco2:'28',rl:'IDENTIFIQUE',rc:'#FFD54F',rb:'rgba(255,213,79,.1)',rbd:'rgba(255,213,79,.3)'},
+ctx:'Criança de <strong>5 anos (18 kg)</strong> com pneumonia grave. Alarme: <em>FC 34 bpm, SpO₂ 80%, PA 58/36.</em> AVPU = P. Cianose central. <strong>Analise traçado e sinais vitais.</strong>',
+sp:30,sl:'Bradicardia grave · instável',
+steps:[
+  {ph:'PRIORIDADE NA BRADICARDIA PEDIÁTRICA',q:'FC 34, SpO₂ 80%, PA 58/36. PRIMEIRO passo?',type:'c',
+  o:[{t:'Atropina 0,36 mg IV imediatamente',c:false},{t:'Via aérea + O₂ 100% — hipóxia é a causa',c:true},{t:'Adrenalina em infusão — PA baixa é prioridade',c:false},{t:'Marcar passo transcutâneo imediatamente',c:false}],
+  pts:20,pen:15,ok:'Bradicardia pediátrica = hipóxia até prova em contrário. O₂ PRIMEIRO. FC frequentemente corrige sozinha.',fail:'Bradicardia pediátrica é quase sempre secundária à hipóxia. Tratar a causa antes de atropina.',ref:'PALS 2025: bradicardia sintomática → 1º via aérea + O₂. FC < 60 com baixo débito após O₂ → atropina.',
+  va:{hr:'34',spo2:'84',bp:'60/38',rr:'10',rl:'BRADICARDIA SINTOMÁTICA',rc:'#FFD54F',rb:'rgba(255,213,79,.1)',rbd:'rgba(255,213,79,.3)'},sa:38,sl2:'O₂ administrado'},
+  {ph:'SEM RESPOSTA AO O₂ · ATROPINA',q:'SpO₂ 90%. FC permanece 34 bpm. Próxima droga e dose?',type:'c',
+  o:[{t:'Atropina 0,02 mg/kg IV = 0,36 mg (mín 0,1 mg)',c:true},{t:'Atropina 0,01 mg/kg IV = 0,18 mg',c:false},{t:'Adrenalina 0,01 mg/kg IV imediatamente',c:false},{t:'Cardioversão sincronizada 1 J/kg',c:false}],
+  pts:15,pen:10,ok:'Atropina 0,02 mg/kg = 0,36 mg para 18 kg. Dose mínima: 0,1 mg (abaixo causa bradicardia paradoxal). Dose máxima: 0,5 mg.',fail:'Atropina 0,02 mg/kg (mín 0,1 mg — paradoxal abaixo disso; máx 0,5 mg). 18 kg = 0,36 mg.',ref:'PALS 2025: atropina 0,02 mg/kg IV/IO (mín 0,1 mg; máx 0,5 mg). Falha → adrenalina 0,01 mg/kg ou marca-passo.',
+  va:{hr:'34',spo2:'91',bp:'64/42',rr:'15',rl:'BRADICARDIA · ATROPINA',rc:'#FFD54F',rb:'rgba(255,213,79,.1)',rbd:'rgba(255,213,79,.3)'},sa:46,sl2:'Atropina administrada'},
+  {ph:'FALHA DA ATROPINA',q:'Atropina sem resposta. FC ainda 34, PA baixa. Próxima conduta?',type:'c',
+  o:[{t:'Repetir atropina 0,02 mg/kg — pode dar mais uma dose',c:false},{t:'Adrenalina 0,01 mg/kg IV em infusão ou marca-passo',c:true},{t:'Amiodarona 5 mg/kg IV',c:false},{t:'Desfibrilar — risco de FV',c:false}],
+  pts:15,pen:10,ok:'Falha da atropina: adrenalina 0,01 mg/kg IV/IO (infusão ou bolus) ou marca-passo transcutâneo.',fail:'Atropina falhou: próximo passo é adrenalina ou marca-passo. Amiodarona = antiarrítmico para FV/TV. Desfibrilar = ritmo chocável.',ref:'PALS 2025: bradicardia refratária à atropina → adrenalina 0,01 mg/kg IV/IO ou marca-passo transcutâneo (sedação/analgesia se consciente).',
+  va:{hr:'34',spo2:'91',bp:'64/42',rr:'15',rl:'BRADICARDIA REFRATÁRIA',rc:'#FF8A65',rb:'rgba(255,138,101,.1)',rbd:'rgba(255,138,101,.3)'},sa:50,sl2:'Adrenalina / marca-passo'}
+]},
+
+/* ── 8. INTRA · TV sem pulso ─────────────────────── */
+{t:'Adolescente 15a · TV sem Pulso',set:'Intra-hospitalar',sev:'PCR CHOCÁVEL',sevTag:'red',ecg:'tvsp',
+v:{hr:'220',spo2:'—',bp:'—',rr:'0',temp:'36.8',peso:'52',etco2:'rcp',rl:'IDENTIFIQUE',rc:'#FFD54F',rb:'rgba(255,213,79,.1)',rbd:'rgba(255,213,79,.3)'},
+ctx:'Adolescente de <strong>15 anos (52 kg) com cardiopatia congênita.</strong> Internado por palpitações. Alarme: inconsciente, sem pulso. Monitor: <em>complexos largos, rápidos, regulares, 220 bpm.</em>',
+sp:18,sl:'PCR · identificar ritmo',
+steps:[
+  {ph:'TV SEM PULSO VS TSV',q:'Complexos LARGOS, rápidos, regulares, 220 bpm. Sem pulso. Diagnóstico?',type:'c',
+  o:[{t:'TSV — adenosina 0,1 mg/kg IV',c:false},{t:'TV sem pulso (chocável) — desfibrilar 2 J/kg = 104 J',c:true},{t:'AESP — adrenalina, não chocar',c:false},{t:'TV com pulso instável — cardioversão sincronizada',c:false}],
+  pts:20,pen:15,ok:'Complexos LARGOS + rápidos + regulares + SEM PULSO = TV sem pulso. Chocável. 104 J. TSV = complexos estreitos.',fail:'TV sem pulso = chocável = desfibrilar 2 J/kg. TSV = complexos estreitos. AESP = complexos lentos organizados sem pulso.',ref:'PALS 2025: TV sem pulso = FV = desfibrilar 2 J/kg. TV com pulso instável = cardioversão sincronizada 1 J/kg.',
+  va:{hr:'—',spo2:'—',bp:'—',rr:'0',rl:'TV SEM PULSO · CHOCÁVEL',rc:'#FF4560',rb:'rgba(255,69,96,.1)',rbd:'rgba(255,69,96,.3)'},sa:22,sl2:'TV sem pulso identificada'},
+  {ph:'CARDIOVERSÃO VS DESFIBRILAÇÃO',q:'Qual a diferença entre cardioversão sincronizada e desfibrilação?',type:'c',
+  o:[{t:'São iguais — mesma energia, mesma indicação',c:false},{t:'Cardioversão = ritmos com pulso instáveis (sincronizada com QRS). Desfibrilação = PCR sem pulso (não sincronizada)',c:true},{t:'Cardioversão usa energia maior que desfibrilação',c:false},{t:'Desfibrilação = 0,5 J/kg. Cardioversão = 2 J/kg',c:false}],
+  pts:10,pen:5,ok:'Cardioversão sincronizada: ritmos com pulso instáveis (TSV, FA, TV com pulso). Desfibrilação: PCR sem pulso (FV, TV sem pulso).',fail:'Cardioversão sincronizada = com pulso instável (dispara no QRS). Desfibrilação = sem pulso (não sincronizada).',ref:'PALS 2025: cardioversão sincronizada começa em 1 J/kg (escala para 2 J/kg). Desfibrilação: 2 J/kg → 4 J/kg → ≥ 4 J/kg.',
+  va:{hr:'—',spo2:'—',bp:'—',rr:'0',rl:'TV SEM PULSO · RCP ATIVA',rc:'#FF4560',rb:'rgba(255,69,96,.1)',rbd:'rgba(255,69,96,.3)'},sa:25,sl2:'Diferença consolidada'},
+  {ph:'AMIODARONA · DOSE EXATA',q:'TV persiste após 3 desfibrilações e adrenalina. Antiarrítmico e dose?',type:'c',
+  o:[{t:'Amiodarona 5 mg/kg = 260 mg IV OU Lidocaína 1 mg/kg = 52 mg IV',c:true},{t:'Adenosina 0,1 mg/kg IV',c:false},{t:'Amiodarona 2 mg/kg IV como dose inicial',c:false},{t:'Vasopressina 0,4 U/kg IV',c:false}],
+  pts:10,pen:5,ok:'Amiodarona 5 mg/kg = 260 mg para 52 kg. Lidocaína 1 mg/kg = 52 mg como alternativa equivalente.',fail:'Amiodarona 5 mg/kg (máx 300 mg) ou lidocaína 1 mg/kg após 3ª desfibrilação sem sucesso.',ref:'PALS 2025: amiodarona 5 mg/kg (máx 300 mg) OU lidocaína 1 mg/kg IV/IO após 3ª desfibrilação. Vasopressina: removida.',
+  va:{hr:'—',spo2:'—',bp:'—',rr:'0',rl:'TV · AMIODARONA',rc:'#FF4560',rb:'rgba(255,69,96,.1)',rbd:'rgba(255,69,96,.3)'},sa:44,sl2:'Amiodarona 260 mg'}
+]},
+
+/* ── 9. INTRA · Pós-ROSC ─────────────────────────── */
+{t:'Criança 6a · Cuidados Pós-ROSC',set:'Intra-hospitalar',sev:'PÓS-ROSC',sevTag:'green',ecg:'sinusal',
+v:{hr:'118',spo2:'100',bp:'66/40',rr:'20',temp:'38.8',peso:'20',etco2:'42',rl:'SINUSAL · ROSC',rc:'#00FF7F',rb:'rgba(0,255,127,.08)',rbd:'rgba(0,255,127,.25)'},
+ctx:'Criança de <strong>6 anos (20 kg)</strong>. ROSC após 10 min de RCP. Intubada em VM. <em>SpO₂ 100% em FiO₂ 100%. Temp 38,8°C. PA 66/40 mmHg (p10 para 6 anos ≈ 88 mmHg). EtCO₂ 42 mmHg.</em>',
+sp:55,sl:'ROSC · estabilizando',
+steps:[
+  {ph:'OXIGENAÇÃO PÓS-ROSC',q:'SpO₂ 100% em FiO₂ 100%. Conduta?',type:'c',
+  o:[{t:'Manter FiO₂ 100% — mais O₂ protege o cérebro',c:false},{t:'Titular FiO₂ para SpO₂ 94–98% — evitar hiperoxia',c:true},{t:'Reduzir para SpO₂ > 88%',c:false},{t:'Manter até neurologia avaliar',c:false}],
+  pts:15,pen:5,ok:'Hiperoxia pós-ROSC = estresse oxidativo = pior desfecho neurológico. Alvo: SpO₂ 94–98%.',fail:'SpO₂ 100% em FiO₂ 100% = hiperoxia. PALS 2025: SpO₂ 94–98%.',ref:'PALS 2025 pós-ROSC: SpO₂ 94–98% | EtCO₂ 35–45 | PA > p10 | Temp < 37,5°C | Glicemia 70–180 | EEG se comatoso.',
+  va:{hr:'118',spo2:'97',bp:'66/40',rr:'20',rl:'SINUSAL · TITULANDO O₂',rc:'#00FF7F',rb:'rgba(0,255,127,.08)',rbd:'rgba(0,255,127,.25)'},sa:60,sl2:'Hiperoxia evitada'},
+  {ph:'TEMPERATURA PÓS-ROSC',q:'Temp 38,8°C. Conduta correta no PALS 2025?',type:'c',
+  o:[{t:'Hipotermia terapêutica 33–34°C por 24h',c:false},{t:'Tratar febre ativamente para Temp < 37,5°C',c:true},{t:'Temperatura aceitável — sem intervenção',c:false},{t:'Hipotermia 36°C por 48h',c:false}],
+  pts:15,pen:5,ok:'PALS 2025: hipotermia terapêutica agressiva NÃO recomendada. Meta: evitar febre, manter Temp < 37,5°C.',fail:'PALS 2025 eliminou hipotermia terapêutica rotineira. Meta: Temp < 37,5°C (evitar febre).',ref:'PALS 2025: evitar hipertermia > 37,5°C. Hipotermia terapêutica 33–34°C sem evidência de superioridade vs normotermia.',
+  va:{hr:'115',spo2:'97',bp:'68/42',rr:'20',rl:'SINUSAL · TRATANDO FEBRE',rc:'#00FF7F',rb:'rgba(0,255,127,.08)',rbd:'rgba(0,255,127,.25)'},sa:62,sl2:'Febre tratada'},
+  {ph:'PA PÓS-ROSC',q:'PA 66/40 (< p10 = 88 mmHg para 6 anos). Conduta?',type:'c',
+  o:[{t:'PA aceitável — aguardar estabilização',c:false},{t:'Vasopressor (adrenalina 0,1–1 mcg/kg/min) + fluido criterioso para PA > p10',c:true},{t:'Bolus 40 mL/kg livre',c:false},{t:'Noradrenalina como 1ª linha em criança',c:false}],
+  pts:15,pen:5,ok:'PA < p10 = hipotensão pós-ROSC. Vasopressor (adrenalina em infusão) + fluido criterioso. Meta: PA > p10.',fail:'PA < p10 = hipotensão. Vasopressor + fluido. Adrenalina = vasopressor 1ª linha em criança. Bolus 40 mL/kg excessivo.',ref:'PALS 2025: PA sistólica > p10. Vasopressor 1ª linha: adrenalina 0,1–1 mcg/kg/min. Noradrenalina = alternativa no choque distributivo.',
+  va:{hr:'108',spo2:'97',bp:'90/58',rr:'22',rl:'SINUSAL · ESTABILIZANDO',rc:'#00FF7F',rb:'rgba(0,255,127,.08)',rbd:'rgba(0,255,127,.25)'},sa:76,sl2:'Hemodinâmica corrigida'}
+]},
+
+/* ── 10. EXTRA · Afogamento RCP e desfibrilação ─── */
+{t:'Criança 8a · Afogamento + DEA',set:'Extra-hospitalar',sev:'PCR',sevTag:'red',ecg:null,
+v:null,
+ctx:'Praia. <strong>Criança de 8 anos</strong> retirada da água inconsciente. Equipe de socorristas (2 pessoas). DEA disponível. Sem pulso, apneica.',
+sp:15,sl:'PCR afogamento · DEA disponível',
+steps:[
+  {ph:'DEA · QUANDO USAR',q:'DEA disponível. Quando usá-lo em relação à RCP?',type:'c',
+  o:[{t:'Usar DEA imediatamente antes de qualquer outra manobra',c:false},{t:'5 ventilações → 2 min de RCP → DEA assim que disponível',c:true},{t:'DEA somente após 5 min de RCP',c:false},{t:'DEA nunca em crianças abaixo de 10 anos',c:false}],
+  pts:10,pen:5,ok:'Afogamento: 5 ventilações iniciais → 2 min de RCP → DEA. Não atrasar RCP para buscar DEA.',fail:'Afogamento: 5 ventilações → RCP → DEA assim que disponível. Não atrasar compressões para buscar DEA.',ref:'PALS 2025: DEA usar assim que disponível sem atrasar RCP. Afogamento: 5 ventilações iniciais antes das compressões.',sa:22,sl2:'DEA disponível'},
+  {ph:'DEA · LACTENTE VS CRIANÇA',q:'DEA sem atenuador pediátrico para criança de 8 anos. Conduta?',type:'c',
+  o:[{t:'Não usar DEA sem atenuador — aguardar equipamento adequado',c:false},{t:'Usar DEA adulto sem atenuador — não atrasar desfibrilação',c:true},{t:'Aguardar DEA pediátrico específico',c:false},{t:'Usar pás adultas em modo manual no menor nível',c:false}],
+  pts:10,pen:5,ok:'Sem DEA pediátrico: usar DEA adulto mesmo assim. Não atrasar desfibrilação por falta de atenuador.',fail:'DEA adulto sem atenuador é preferível a não desfibrilar. Não atrasar por equipamento.',ref:'PALS 2025: DEA pediátrico (com atenuador) preferencial para < 8 anos. Se não disponível → DEA adulto. Não atrasar por falta de atenuador.',sa:30,sl2:'DEA adulto utilizado'},
+  {ph:'CICLOS RCP + DEA',q:'DEA indica choque. Qual a conduta após a descarga?',type:'c',
+  o:[{t:'Checar pulso imediatamente após o choque',c:false},{t:'RCP IMEDIATA por 2 min sem checar pulso',c:true},{t:'Aguardar DEA reanalisar antes de RCP',c:false},{t:'2 ventilações e aguardar DEA',c:false}],
+  pts:10,pen:5,ok:'Após choque do DEA: RCP IMEDIATA 2 min. Nunca pausar para checar pulso logo após o choque.',fail:'Após choque: RCP imediata 2 min. DEA reanalisará automaticamente após 2 min.',ref:'PALS 2025: após choque → RCP imediata 2 min → DEA reanalisará. Pausa pós-choque < 5 seg.',sa:38,sl2:'RCP pós-choque'}
+]},
+
+/* ── 11. INTRA · TSV instável ────────────────────── */
+{t:'Lactente 8m · TSV Instável',set:'Intra-hospitalar',sev:'INSTÁVEL',sevTag:'amber',ecg:'tsv',
+v:{hr:'280',spo2:'88',bp:'52/30',rr:'60',temp:'37.1',peso:'8',etco2:'38',rl:'IDENTIFIQUE',rc:'#FFD54F',rb:'rgba(255,213,79,.1)',rbd:'rgba(255,213,79,.3)'},
+ctx:'Lactente de <strong>8 meses (8 kg)</strong> trazido por irritabilidade e recusa alimentar há 12h. Monitor: <em>FC 280 bpm, SpO₂ 88%, PA 52/30, FR 60.</em> Hipoperfusão evidente. <strong>Analise o traçado.</strong>',
+sp:28,sl:'TSV instável · hipoperfusão',
+steps:[
+  {ph:'IDENTIFICAÇÃO TSV',q:'FC 280, complexos estreitos, regulares. SpO₂ 88%, PA 52/30. Diagnóstico e conduta?',type:'c',
+  o:[{t:'FV — desfibrilar 2 J/kg',c:false},{t:'TSV com pulso instável — cardioversão sincronizada 1 J/kg',c:true},{t:'TSV estável — adenosina 0,1 mg/kg IV',c:false},{t:'Bradicardia — atropina',c:false}],
+  pts:20,pen:15,ok:'TSV (complexos estreitos + regulares) com pulso + instabilidade hemodinâmica = cardioversão sincronizada 1 J/kg.',fail:'TSV com pulso = tem pulso (diferente de TV sem pulso). Instável (hipoperfusão) → cardioversão sincronizada 1 J/kg.',ref:'PALS 2025: TSV instável → cardioversão sincronizada 1 J/kg (pode escalar para 2 J/kg). TSV estável → adenosina 0,1 mg/kg.',
+  va:{hr:'280',spo2:'88',bp:'52/30',rr:'60',rl:'TSV · INSTÁVEL',rc:'#FF8A65',rb:'rgba(255,138,101,.1)',rbd:'rgba(255,138,101,.3)'},sa:32,sl2:'TSV instável identificada'},
+  {ph:'ADENOSINA · TSV ESTÁVEL',q:'Depois da cardioversão, TSV recorre com PA normal e lactente alerta. Conduta?',type:'c',
+  o:[{t:'Cardioversão sincronizada novamente',c:false},{t:'Adenosina 0,1 mg/kg IV em bolus rápido (dose máx 6 mg)',c:true},{t:'Amiodarona 5 mg/kg IV',c:false},{t:'Desfibrilar — pode ser FV fina',c:false}],
+  pts:15,pen:10,ok:'TSV estável recorrente → adenosina 0,1 mg/kg IV em bolus rápido (máx 6 mg primeira dose, 12 mg nas seguintes).',fail:'TSV estável = adenosina (se IV disponível) ou cardioversão. Bolus rápido seguido de flush de SF.',ref:'PALS 2025: TSV estável → adenosina 0,1 mg/kg IV bolus rápido (máx 6 mg 1ª dose, 0,2 mg/kg / máx 12 mg 2ª). Flush imediato.',
+  va:{hr:'280',spo2:'93',bp:'72/48',rr:'44',rl:'TSV · ADENOSINA',rc:'#FFD54F',rb:'rgba(255,213,79,.1)',rbd:'rgba(255,213,79,.3)'},sa:44,sl2:'Adenosina indicada'},
+  {ph:'ADENOSINA · TÉCNICA',q:'Como administrar adenosina corretamente para máxima eficácia?',type:'c',
+  o:[{t:'IV lento em 2–3 minutos para evitar efeitos adversos',c:false},{t:'Bolus rápido no acesso mais proximal + flush imediato de 5–10 mL SF',c:true},{t:'Diluída em 50 mL SF em infusão contínua',c:false},{t:'Bolus lento seguido de flush em 30 segundos',c:false}],
+  pts:10,pen:5,ok:'Adenosina tem meia-vida de < 10 seg. Obrigatório: bolus rápido no acesso mais proximal + flush imediato de 5–10 mL SF.',fail:'Adenosina meia-vida < 10 seg. Deve ser bolus rápido + flush imediato. IV lento = ineficaz.',ref:'PALS 2025: adenosina bolus IV rápido + flush SF imediato. Acesso preferencial: antecubital ou acima. Pode repetir dose dobrada.',
+  va:{hr:'180',spo2:'95',bp:'82/54',rr:'36',rl:'TSV · CONVERTENDO',rc:'#FFD54F',rb:'rgba(255,213,79,.1)',rbd:'rgba(255,213,79,.3)'},sa:56,sl2:'Adenosina administrada'}
+]},
+
+/* ── 12. INTRA · PCR completo sequência ─────────── */
+{t:'Criança 3a · Sequência Completa PCR',set:'Intra-hospitalar',sev:'PCR COMPLETO',sevTag:'red',ecg:'fv',
+v:{hr:'—',spo2:'—',bp:'—',rr:'0',temp:'36.6',peso:'14',etco2:'rcp',rl:'IDENTIFIQUE',rc:'#FFD54F',rb:'rgba(255,213,79,.1)',rbd:'rgba(255,213,79,.3)'},
+ctx:'Criança de <strong>3 anos (14 kg)</strong> em PCR na UE. Monitor conectado. Equipe de 3 profissionais. Acesso IV obtido. <em>Simule toda a sequência do algoritmo PALS 2025. Identifique o traçado.</em>',
+sp:14,sl:'PCR · algoritmo completo',
+steps:[
+  {ph:'CHECAGEM RÍTMO · SEQUÊNCIA',q:'Traçado identificado. Qual a sequência COMPLETA correta para ritmo chocável?',type:'c',
+  o:[{t:'Adrenalina → choque → amiodarona → choque',c:false},{t:'Choque → RCP 2 min → checar → choque → RCP 2 min → adrenalina → choque → amiodarona',c:true},{t:'Choque → choque → choque → adrenalina → amiodarona',c:false},{t:'RCP 2 min → choque → adrenalina → choque → amiodarona',c:false}],
+  pts:20,pen:10,ok:'Sequência exata: 1º choque → RCP 2 min → checar → 2º choque → RCP 2 min → ADRENALINA após 2ª defib → 3º choque → AMIODARONA após 3ª.',fail:'Sequência chocável: choque → RCP 2 min → checar → choque → RCP 2 min → adrenalina (após 2ª) → choque → amiodarona (após 3ª).',ref:'PALS 2025 chocável: 2 J/kg → RCP 2 min → 4 J/kg → adrenalina após 2ª defib → ≥ 4 J/kg → amiodarona após 3ª. Adrenalina a cada 3–5 min.',
+  va:{hr:'—',spo2:'—',bp:'—',rr:'0',rl:'FV · SEQUÊNCIA ATIVA',rc:'#FF4560',rb:'rgba(255,69,96,.1)',rbd:'rgba(255,69,96,.3)'},sa:18,sl2:'Sequência identificada'},
+  {ph:'COMPARAÇÃO · CHOCÁVEL VS NÃO CHOCÁVEL',q:'Diferença principal no uso de adrenalina entre ritmo chocável e não chocável?',type:'c',
+  o:[{t:'Adrenalina só no ritmo não chocável',c:false},{t:'Não chocável → adrenalina precoce (3–5 min). Chocável → adrenalina após 2ª desfibrilação',c:true},{t:'Mesma sequência para ambos os ritmos',c:false},{t:'Chocável → adrenalina imediata antes do choque',c:false}],
+  pts:20,pen:10,ok:'Não chocável: adrenalina PRECOCEMENTE (3–5 min). Chocável: desfibrilar primeiro, adrenalina só após 2ª desfibrilação sem sucesso.',fail:'Diferença crucial: não chocável = adrenalina precoce (nova recomendação 2025). Chocável = desfibrilar primeiro.',ref:'PALS 2025: não chocável → adrenalina precoce Classe IIa (3–5 min). Chocável → priorizar desfibrilação; adrenalina após 2ª defib.',
+  va:{hr:'—',spo2:'—',bp:'—',rr:'0',rl:'FV · CONCEITO FIXADO',rc:'#FF4560',rb:'rgba(255,69,96,.1)',rbd:'rgba(255,69,96,.3)'},sa:22,sl2:'Diferença consolidada'},
+  {ph:'ETCO₂ COMO MONITOR DE QUALIDADE',q:'EtCO₂ durante RCP: qual valor indica boa qualidade de compressões?',type:'c',
+  o:[{t:'< 10 mmHg — normal durante PCR',c:false},{t:'≥ 10–15 mmHg — indica perfusão pulmonar e compressões eficazes',c:true},{t:'> 45 mmHg — quanto maior, melhor',c:false},{t:'EtCO₂ não tem valor durante RCP',c:false}],
+  pts:10,pen:5,ok:'EtCO₂ ≥ 10–15 mmHg durante RCP = compressões eficazes e perfusão pulmonar adequada. Subida abrupta > 35 mmHg = ROSC.',fail:'EtCO₂ < 10 mmHg durante RCP = compressões inadequadas ou débito muito baixo. Alvo: ≥ 10–15 mmHg.',ref:'PALS 2025: EtCO₂ ≥ 10–15 mmHg durante RCP = qualidade adequada. Elevação abrupta ≥ 35–40 mmHg = sinal precoce de ROSC.',
+  va:{hr:'—',spo2:'—',bp:'—',rr:'0',rl:'FV · RCP MONITORADA',rc:'#FF4560',rb:'rgba(255,69,96,.1)',rbd:'rgba(255,69,96,.3)'},sa:24,sl2:'EtCO₂ monitorado'},
+  {ph:'ROSC · SINAIS DE RETORNO',q:'Quais sinais indicam ROSC durante RCP?',type:'c',
+  o:[{t:'FC > 60 bpm no monitor apenas',c:false},{t:'Pulso central palpável + ritmo organizado no monitor + subida abrupta do EtCO₂',c:true},{t:'EtCO₂ > 10 mmHg durante compressões',c:false},{t:'SpO₂ detectável pelo oxímetro',c:false}],
+  pts:10,pen:5,ok:'ROSC: pulso central palpável + ritmo organizado + EtCO₂ com subida abrupta (≥ 35–40 mmHg). Todos os sinais juntos.',fail:'ROSC não é apenas ritmo no monitor. Precisa de pulso palpável + ritmo + EtCO₂ subindo abruptamente.',ref:'PALS 2025: ROSC = pulso central + ritmo organizado + EtCO₂ ≥ 35–40 mmHg (subida abrupta é o sinal mais precoce).',
+  va:{hr:'110',spo2:'96',bp:'88/56',rr:'18',rl:'SINUSAL · ROSC',rc:'#00FF7F',rb:'rgba(0,255,127,.08)',rbd:'rgba(0,255,127,.25)'},sa:65,sl2:'ROSC confirmado'}
+]}
+];
+
+/* ══════════════════════════════════════════════════════
+   STATE
+══════════════════════════════════════════════════════ */
+const G={ci:0,si:0,pts:0,ok:0,fail:0,combo:0,ans:false,hSel:[],res:[]};
+const getC=()=>CASES[G.ci];
+const getS=()=>CASES[G.ci].steps[G.si];
+const totalQ=()=>CASES.reduce((s,c)=>s+c.steps.length,0);
+
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+
+/* ══════════════════════════════════════════════════════
+   RENDER
+══════════════════════════════════════════════════════ */
+function render(){
+  const C=getC(),S=getS();
+  G.ans=false;G.hSel=[];
+
+  // topbar
+  document.getElementById('tb-title').textContent=`Caso ${G.ci+1}/${CASES.length} · Passo ${G.si+1}/${C.steps.length}`;
+
+  // progress
+  const done=CASES.slice(0,G.ci).reduce((s,c)=>s+c.steps.length,0)+G.si;
+  document.getElementById('prog-f').style.width=`${done/totalQ()*100}%`;
+
+  // monitor — show only for intra-hosp
+  const mon=document.getElementById('monitor');
+  if(C.ecg&&C.set==='Intra-hospitalar'){
+    mon.style.display='block';
+    startECG(C.ecg,C.v);
+    setV(C.v);
+  } else {
+    mon.style.display='none';
+    if(raf){cancelAnimationFrame(raf);raf=null;}
+  }
+
+  // case card
+  const sev=document.getElementById('cc-sev');
+  sev.textContent=C.sev;sev.className=`tag tag-${C.sevTag}`;
+  document.getElementById('cc-set').textContent=C.set;
+  document.getElementById('cc-num').textContent=`Caso ${G.ci+1}/${CASES.length}`;
+  document.getElementById('cc-title').textContent=C.t;
+  document.getElementById('cc-ctx').innerHTML=C.ctx;
+
+  // phase pills
+  document.getElementById('phase-row').innerHTML=C.steps.map((_,i)=>
+    `<div class="pp ${i<G.si?'done':i===G.si?'active':''}"></div>`).join('');
+
+  setPtState(C.sp,C.sl);
+
+  // step
+  document.getElementById('s-phase').textContent=S.ph;
+  document.getElementById('s-q').textContent=S.q;
+
+  const fb=document.getElementById('fb');
+  fb.className='fb';fb.style.display='none';
+  document.getElementById('btn-next').disabled=true;
+  const isLast=G.ci===CASES.length-1&&G.si===C.steps.length-1;
+  document.getElementById('btn-next').textContent=isLast?'Ver resultado →':'Próximo →';
+
+  if(S.type==='hst'){
+    document.getElementById('opt-list').innerHTML='';
+    const hg=document.getElementById('hst-grid');
+    hg.style.display='grid';
+    hg.innerHTML=S.hI.map((item,i)=>
+      `<div class="hi" id="h${i}" onclick="toggleH(${i},'${item.n}')">
+        <span class="hd"></span>
+        <span class="hcat">${item.g}</span>
+        <span style="flex:1">${item.n}</span>
+        <span class="hh">${item.h}</span>
+      </div>`).join('');
+    document.getElementById('btn-confirm').style.display='block';
+    document.getElementById('btn-confirm').disabled=false;
+  } else {
+    document.getElementById('hst-grid').style.display='none';
+    document.getElementById('btn-confirm').style.display='none';
+    const keys=['A','B','C','D'];
+    document.getElementById('opt-list').innerHTML=S.o.map((o,i)=>
+      `<button class="ob" id="o${i}" onclick="pick(${i})">
+        <span class="ok">${keys[i]}</span><span>${o.t}</span>
+      </button>`).join('');
+  }
+
+  startTimer(90);
+  document.getElementById('rscroll').scrollTop=0;
+}
+
+function setPtState(pct,lbl){
+  const color=pct<=28?'var(--red)':pct<=55?'var(--amber)':'var(--green)';
+  document.getElementById('pt-dot').style.background=color;
+  document.getElementById('pt-lbl').textContent=lbl;
+  document.getElementById('pt-fill').style.cssText=`width:${pct}%;background:${color}`;
+}
+
+function updScore(){
+  const ids=[['tb-pts','sm-pts',G.pts],['tb-ok','sm-ok',G.ok],['tb-fail','sm-fail',G.fail]];
+  ids.forEach(([a,b,v])=>{
+    [a,b].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=v;});
+  });
+}
+
+function showCombo(){
+  if(G.combo<2)return;
+  const el=document.getElementById('combo');
+  const cn=document.getElementById('combo-n');
+  if(!el||!cn)return;
+  cn.textContent=G.combo;
+  el.style.display='block';
+  clearTimeout(el._t);
+  el._t=setTimeout(()=>el.style.display='none',2000);
+}
+
+/* ══════════════════════════════════════════════════════
+   ANSWER
+══════════════════════════════════════════════════════ */
+function pick(idx){
+  if(G.ans)return;G.ans=true;pauseTimer();
+  const S=getS();const isOk=S.o[idx].c;
+  S.o.forEach((o,i)=>{
+    const el=document.getElementById(`o${i}`);if(!el)return;
+    el.disabled=true;
+    if(o.c)el.classList.add('correct');
+    else if(i===idx)el.classList.add('wrong');
+  });
+  finalize(isOk,S);
+}
+
+function toggleH(idx,name){
+  if(G.ans)return;
+  const el=document.getElementById(`h${idx}`);
+  const pos=G.hSel.indexOf(name);
+  if(pos>-1){G.hSel.splice(pos,1);el.classList.remove('sel');}
+  else{G.hSel.push(name);el.classList.add('sel');}
+}
+
+function confirmHst(){
+  if(G.ans)return;G.ans=true;pauseTimer();
+  const S=getS();
+  const hits=S.hC.filter(c=>G.hSel.includes(c)).length;
+  const wrongs=G.hSel.filter(s=>!S.hC.includes(s)).length;
+  const isOk=hits>=S.hC.length-1&&wrongs<=1;
+  S.hI.forEach((item,i)=>{
+    const el=document.getElementById(`h${i}`);if(!el)return;
+    el.onclick=null;
+    if(S.hC.includes(item.n))el.classList.add('hit');
+    else if(G.hSel.includes(item.n))el.classList.add('miss-sel');
+  });
+  document.getElementById('btn-confirm').disabled=true;
+  finalize(isOk,S);
+}
+
+function disOpts(){
+  document.querySelectorAll('.ob').forEach(b=>b.disabled=true);
+  const S=getS();if(S&&S.o)S.o.forEach((o,i)=>{if(o.c){const e=document.getElementById(`o${i}`);if(e)e.classList.add('reveal');}});
+}
+
+function finalize(isOk,S){
+  if(isOk){G.pts+=S.pts*(1+Math.floor(G.combo/3)*0.1|0);G.ok++;G.combo++;}
+  else{G.pts=Math.max(0,G.pts-(S.pen||0));G.fail++;G.combo=0;}
+  G.res.push({t:`${G.ci+1}. ${S.ph}`,ok:isOk});
+  if(S.va){setV(S.va);if(getC().ecg)startECG(getC().ecg,S.va);}
+  if(isOk&&S.sa)setPtState(S.sa,S.sl2);
+  const type=isOk?'ok-fb':'fail-fb';
+  showFB(type,isOk?'✓ CORRETO':'✗ INCORRETO',isOk?S.ok:S.fail,S.ref);
+  if(isOk)showCombo();
+  updScore();
+  document.getElementById('btn-next').disabled=false;
+  setTimeout(()=>document.getElementById('fb').scrollIntoView({behavior:'smooth',block:'nearest'}),80);
+}
+
+function showFB(type,hd,body,ref){
+  const fb=document.getElementById('fb');
+  fb.className=`fb show ${type}`;fb.style.display='block';
+  document.getElementById('fb-hd').className=`fb-hd ${type}`;
+  document.getElementById('fb-hd').textContent=hd;
+  document.getElementById('fb-body').textContent=body;
+  document.getElementById('fb-ref').innerHTML=`<b>PALS 2025 ·</b> ${ref}`;
+}
+
+/* ══════════════════════════════════════════════════════
+   NAVIGATION
+══════════════════════════════════════════════════════ */
+function nextStep(){
+  G.si++;
+  if(G.si>=CASES[G.ci].steps.length){G.ci++;G.si=0;}
+  if(G.ci>=CASES.length){showEnd();return;}
+  render();
+}
+
+/* ══════════════════════════════════════════════════════
+   END
+══════════════════════════════════════════════════════ */
+function showEnd(){
+  pauseTimer();
+  const total=totalQ(),pct=Math.round(G.ok/total*100);
+  document.getElementById('e-pts').textContent=G.pts;
+  document.getElementById('e-sub').textContent=`${G.ok} de ${total} questões corretas · ${pct}%`;
+  let grade,color,msg;
+  if(pct>=90){grade='EXCELENTE';color='var(--green)';msg='Domínio completo do PALS 2025. Doses corretas, sequências certas, mudanças da diretriz fixadas.';}
+  else if(pct>=75){grade='MUITO BOM';color='#1D4ED8';msg='Bom desempenho. Revise adrenalina no não chocável e sequência chocável completa.';}
+  else if(pct>=60){grade='REGULAR';color='var(--amber)';msg='Atenção: adrenalina precoce no não chocável, técnica de lactente e temperatura pós-ROSC.';}
+  else{grade='PRECISA MELHORAR';color='var(--red)';msg='Revise o algoritmo completo. Foco nas 4 mudanças do PALS 2025 e sequências chocável vs não chocável.';}
+  document.getElementById('e-grade').textContent=grade;
+  document.getElementById('e-grade').style.color=color;
+  document.getElementById('e-msg').textContent=msg;
+  document.getElementById('e-tbl').innerHTML=G.res.map(r=>
+    `<div class="er"><span>${r.t}${r.to?' · timeout':''}</span><span class="er-tag ${r.ok?'er-ok':'er-fail'}">${r.ok?'ACERTO':'ERRO'}</span></div>`
+  ).join('');
+  show('end');
+}
+
+/* ══════════════════════════════════════════════════════
+   INIT
+══════════════════════════════════════════════════════ */
+function startGame(){
+  if(iraf){cancelAnimationFrame(iraf);iraf=null;}
+  G.ci=0;G.si=0;G.pts=0;G.ok=0;G.fail=0;G.combo=0;G.res=[];
+  updScore();show('game');render();
+}
+function restartGame(){
+  show('intro');
+  G.ci=0;G.si=0;G.pts=0;G.ok=0;G.fail=0;G.combo=0;G.res=[];
+  updScore();introECG();
+}
+window.addEventListener('load',()=>{
+  introECG();
+  window.addEventListener('resize',()=>{if(raf&&document.getElementById('game').classList.contains('active'))drawECG();});
+});
+</script>
+</body>
+</html>
