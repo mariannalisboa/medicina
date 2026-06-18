@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GINA 2025 · Escalonamento de Asma</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{background:#f5f5f7;color:#111;font-family:'Inter',sans-serif;font-size:14px;line-height:1.5;}
+:root{
+  --red:#C8102E;--red-d:#9B0C23;--red-l:#FFF0F2;--red-b:#FCCDD4;
+  --green:#15803D;--green-l:#F0FDF4;--green-b:#BBF7D0;
+  --amber:#92400E;--amber-l:#FFFBEB;--amber-b:#FDE68A;
+  --blue:#1D4ED8;--blue-l:#EFF6FF;--blue-b:#BFDBFE;
+  --teal:#0F766E;--teal-l:#F0FDFA;--teal-b:#99F6E4;
+  --gray-50:#FAFAFA;--gray-100:#F4F4F5;--gray-200:#E4E4E7;
+  --gray-400:#A1A1AA;--gray-600:#52525B;--gray-800:#27272A;--gray-900:#18181B;
+  --border:#E4E4E7;--shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.04);
+  --r:8px;--r-lg:12px;
+}
+.screen{display:none;}.screen.active{display:flex;}
+
+/* INTRO */
+#intro{flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:32px 16px;background:#fff;text-align:center;}
+.i-eyebrow{font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--teal);background:var(--teal-l);border:1px solid var(--teal-b);border-radius:20px;padding:5px 14px;display:inline-block;margin-bottom:18px;}
+.i-h1{font-size:34px;font-weight:900;color:var(--gray-900);letter-spacing:-.03em;line-height:1.15;margin-bottom:8px;}
+.i-h1 span{color:var(--teal);}
+.i-sub{font-size:14px;color:var(--gray-600);margin-bottom:26px;max-width:480px;}
+.step-ladder{display:flex;gap:6px;margin-bottom:26px;width:100%;max-width:540px;}
+.ladder-step{flex:1;background:var(--gray-50);border:1px solid var(--border);border-radius:var(--r);padding:10px 6px;text-align:center;}
+.ladder-n{font-size:18px;font-weight:900;color:var(--teal);line-height:1;}
+.ladder-l{font-size:9px;color:var(--gray-600);margin-top:3px;font-weight:600;}
+.i-notice{max-width:500px;background:var(--amber-l);border:1px solid var(--amber-b);border-radius:var(--r);padding:10px 14px;font-size:12px;color:var(--amber);line-height:1.6;margin-bottom:22px;text-align:left;}
+.i-notice b{font-weight:700;}
+.btn-go{background:var(--teal);color:#fff;border:none;border-radius:var(--r);padding:13px 32px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;transition:background .12s,transform .1s;}
+.btn-go:hover{background:#0a5a54;}.btn-go:active{transform:scale(.98);}
+
+/* GAME */
+#game{flex-direction:column;min-height:100vh;}
+#tb{background:#fff;border-bottom:1px solid var(--border);height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 18px;position:sticky;top:0;z-index:100;box-shadow:var(--shadow);}
+.tb-l{display:flex;align-items:center;gap:10px;}
+.tb-badge{background:var(--teal);color:#fff;font-size:10px;font-weight:800;letter-spacing:.14em;padding:4px 9px;border-radius:4px;font-family:'JetBrains Mono',monospace;}
+.tb-title{font-size:13px;font-weight:700;color:var(--gray-800);}
+.tb-r{display:flex;align-items:center;gap:18px;}
+.tb-s{text-align:right;}.tb-s-l{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--gray-400);}.tb-s-v{font-size:17px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--gray-900);}
+
+#prog{height:3px;background:var(--gray-100);}
+#prog-f{height:100%;background:var(--teal);transition:width .5s;}
+
+#gbody{flex:1;display:grid;grid-template-columns:1fr 360px;overflow:hidden;max-height:calc(100vh - 55px);}
+
+/* LEFT — patient + step ladder visual */
+#lcol{overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:14px;border-right:1px solid var(--border);}
+#lcol::-webkit-scrollbar{width:4px;}
+#lcol::-webkit-scrollbar-thumb{background:var(--gray-200);border-radius:2px;}
+
+/* Patient card */
+#pcard{background:#fff;border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;}
+.pc-hdr{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.tag{font-size:10px;font-weight:700;letter-spacing:.06em;padding:3px 9px;border-radius:3px;text-transform:uppercase;}
+.tag-red{background:var(--red-l);color:var(--red);border:1px solid var(--red-b);}
+.tag-amber{background:var(--amber-l);color:var(--amber);border:1px solid var(--amber-b);}
+.tag-green{background:var(--green-l);color:var(--green);border:1px solid var(--green-b);}
+.tag-blue{background:var(--blue-l);color:var(--blue);border:1px solid var(--blue-b);}
+.tag-teal{background:var(--teal-l);color:var(--teal);border:1px solid var(--teal-b);}
+.tag-gray{background:var(--gray-100);color:var(--gray-600);border:1px solid var(--border);}
+.pc-body{padding:14px;}
+.pc-title{font-size:16px;font-weight:800;color:var(--gray-900);margin-bottom:10px;}
+.pc-ctx{font-size:12.5px;line-height:1.75;color:var(--gray-600);background:var(--gray-50);border-radius:var(--r);padding:11px 13px;border-left:3px solid var(--teal);}
+.pc-ctx strong{color:var(--gray-900);font-weight:600;}
+.pc-ctx em{color:var(--red);font-style:normal;font-weight:600;}
+
+/* Control assessment box */
+#assess-box{margin-top:12px;background:var(--gray-50);border:1px solid var(--border);border-radius:var(--r);padding:11px 13px;}
+.assess-title{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gray-600);margin-bottom:8px;}
+.assess-row{display:flex;align-items:center;justify-content:space-between;padding:4px 0;font-size:12px;border-bottom:1px solid var(--gray-200);}
+.assess-row:last-child{border-bottom:none;}
+.assess-flag{font-size:10px;font-weight:700;padding:1px 7px;border-radius:3px;}
+.flag-yes{background:var(--red-l);color:var(--red);}
+.flag-no{background:var(--green-l);color:var(--green);}
+
+/* Current step ladder visual */
+#ladder-card{background:#fff;border:1px solid var(--border);border-radius:var(--r-lg);padding:14px;}
+.ladder-title{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gray-600);margin-bottom:10px;}
+.ladder-visual{display:flex;flex-direction:column-reverse;gap:4px;}
+.lv-step{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 10px;border-radius:var(--r);
+  border:1px solid var(--border);background:var(--gray-50);
+  font-size:11.5px;transition:all .3s;
+}
+.lv-step.current{background:var(--teal-l);border-color:var(--teal-b);border-width:2px;font-weight:700;}
+.lv-step .lv-n{
+  width:20px;height:20px;border-radius:50%;
+  background:var(--gray-200);color:var(--gray-600);
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px;font-weight:800;flex-shrink:0;
+}
+.lv-step.current .lv-n{background:var(--teal);color:#fff;}
+.lv-step .lv-label{flex:1;color:var(--gray-700);}
+.lv-step.current .lv-label{color:var(--teal);}
+
+/* score mini */
+#smini{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;}
+.sm{background:var(--gray-50);border:1px solid var(--border);border-radius:var(--r);padding:7px;text-align:center;}
+.sm-l{font-size:9px;color:var(--gray-400);font-weight:600;text-transform:uppercase;letter-spacing:.06em;}
+.sm-v{font-size:19px;font-weight:800;font-variant-numeric:tabular-nums;}
+
+/* RIGHT — decision panel */
+#rcol{display:flex;flex-direction:column;background:#fff;overflow:hidden;}
+#rscroll{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;}
+#rscroll::-webkit-scrollbar{width:4px;}
+#rscroll::-webkit-scrollbar-thumb{background:var(--gray-200);border-radius:2px;}
+.s-phase{font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--teal);font-family:'JetBrains Mono',monospace;}
+.s-q{font-size:13.5px;font-weight:600;color:var(--gray-900);line-height:1.55;}
+
+.opts{display:flex;flex-direction:column;gap:5px;}
+.ob{background:var(--gray-50);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px;cursor:pointer;text-align:left;display:flex;align-items:flex-start;gap:8px;font-size:12.5px;color:var(--gray-800);line-height:1.4;font-family:'Inter',sans-serif;transition:border-color .1s,background .1s;}
+.ob:hover:not(:disabled){border-color:var(--teal);background:var(--teal-l);}
+.ob:disabled{cursor:default;}
+.ok{min-width:18px;height:18px;border-radius:4px;background:var(--gray-200);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:var(--gray-600);flex-shrink:0;margin-top:1px;font-family:'JetBrains Mono',monospace;transition:all .1s;}
+.ob.correct{border-color:var(--green);background:var(--green-l);}.ob.correct .ok{background:var(--green);color:#fff;}
+.ob.wrong{border-color:var(--red);background:var(--red-l);}.ob.wrong .ok{background:var(--red);color:#fff;}
+.ob.reveal{border-color:var(--green-b);background:var(--green-l);opacity:.5;}
+
+/* multi-select for symptom checklist */
+.msel-grid{display:flex;flex-direction:column;gap:5px;}
+.msel-item{display:flex;align-items:center;gap:8px;padding:8px 11px;border-radius:var(--r);border:1px solid var(--border);background:var(--gray-50);cursor:pointer;font-size:12px;color:var(--gray-800);transition:all .1s;}
+.msel-item:hover{border-color:var(--teal);background:var(--teal-l);}
+.msel-item.sel{border-color:var(--teal);background:var(--teal-l);}
+.msel-dot{width:14px;height:14px;border-radius:3px;border:1.5px solid var(--gray-400);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .1s;}
+.msel-item.sel .msel-dot{background:var(--teal);border-color:var(--teal);}
+.msel-item.sel .msel-dot::after{content:'✓';color:#fff;font-size:9px;font-weight:900;}
+.msel-item.hit{border-color:var(--green);background:var(--green-l);}
+.msel-item.miss-sel{border-color:var(--red-b);opacity:.45;}
+
+.fb{border-radius:var(--r);padding:11px 13px;display:none;}
+.fb.show{display:block;}
+.fb.ok-fb{background:var(--green-l);border:1px solid var(--green-b);}
+.fb.fail-fb{background:var(--red-l);border:1px solid var(--red-b);}
+.fb-hd{font-size:9px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px;font-family:'JetBrains Mono',monospace;}
+.fb-hd.ok-fb{color:var(--green);}.fb-hd.fail-fb{color:var(--red);}
+.fb-body{font-size:12.5px;color:var(--gray-700);line-height:1.6;}
+.fb-ref{margin-top:7px;font-size:11.5px;color:var(--gray-500);padding-top:7px;border-top:1px solid var(--gray-200);line-height:1.55;}
+.fb-ref b{color:var(--gray-700);font-weight:700;}
+
+/* Step reference card (shows the GINA table when relevant) */
+.gina-table{width:100%;border-collapse:collapse;font-size:11px;margin-top:8px;}
+.gina-table th,.gina-table td{padding:6px 8px;border:1px solid var(--border);text-align:left;}
+.gina-table th{background:var(--gray-50);font-weight:700;color:var(--gray-700);}
+.gina-table td{color:var(--gray-700);}
+
+#rfooter{padding:11px 16px;border-top:1px solid var(--border);display:flex;gap:7px;}
+.btn-confirm{background:var(--gray-50);color:var(--gray-800);border:1px solid var(--border);border-radius:var(--r);padding:9px 14px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:all .12s;display:none;}
+.btn-confirm:hover{border-color:var(--teal);color:var(--teal);}
+.btn-confirm:disabled{opacity:.4;cursor:default;}
+.btn-next{flex:1;background:var(--teal);color:#fff;border:none;border-radius:var(--r);padding:9px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;transition:background .12s,transform .1s;}
+.btn-next:hover{background:#0a5a54;}.btn-next:active{transform:scale(.98);}
+.btn-next:disabled{background:var(--gray-200);color:var(--gray-400);cursor:default;}
+
+/* END */
+#end{flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:32px 16px;background:#fff;text-align:center;}
+.e-badge{font-size:10px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--teal);background:var(--teal-l);border:1px solid var(--teal-b);border-radius:4px;padding:4px 12px;display:inline-block;margin-bottom:12px;font-family:'JetBrains Mono',monospace;}
+.e-pts{font-size:76px;font-weight:900;color:var(--gray-900);line-height:1;letter-spacing:-.04em;margin-bottom:4px;}
+.e-sub{font-size:13px;color:var(--gray-400);margin-bottom:10px;}
+.e-grade{font-size:22px;font-weight:800;margin-bottom:12px;}
+.e-msg{font-size:13px;color:var(--gray-600);max-width:460px;line-height:1.7;margin:0 auto 20px;}
+.e-tbl{width:100%;max-width:540px;border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;margin-bottom:20px;text-align:left;max-height:240px;overflow-y:auto;}
+.er{display:flex;justify-content:space-between;align-items:center;padding:7px 14px;border-bottom:1px solid var(--border);font-size:11.5px;color:var(--gray-700);}
+.er:last-child{border-bottom:none;}
+.er-tag{font-size:9px;font-weight:800;padding:2px 7px;border-radius:3px;font-family:'JetBrains Mono',monospace;}
+.er-ok{background:var(--green-l);color:var(--green);}.er-fail{background:var(--red-l);color:var(--red);}
+.btn-restart{background:var(--gray-50);color:var(--gray-800);border:1px solid var(--border);border-radius:var(--r);padding:10px 24px;font-size:14px;font-weight:700;cursor:pointer;}
+.btn-restart:hover{border-color:var(--teal);color:var(--teal);}
+</style>
+</head>
+<body>
+
+<!-- INTRO -->
+<div id="intro" class="screen active">
+  <div class="i-eyebrow">GINA 2025 · Manutenção da Asma</div>
+  <h1 class="i-h1">Simulador de<br><span>Escalonamento Terapêutico</span></h1>
+  <p class="i-sub">Casos clínicos sequenciais — crianças 6–11 anos. Você avalia o controle, decide subir, manter ou descer o step, e calcula doses conforme o GINA 2025.</p>
+  <div class="step-ladder">
+    <div class="ladder-step"><div class="ladder-n">1</div><div class="ladder-l">SABA prn</div></div>
+    <div class="ladder-step"><div class="ladder-n">2</div><div class="ladder-l">ICS baixa</div></div>
+    <div class="ladder-step"><div class="ladder-n">3</div><div class="ladder-l">ICS-LABA baixa</div></div>
+    <div class="ladder-step"><div class="ladder-n">4</div><div class="ladder-l">ICS-LABA média</div></div>
+    <div class="ladder-step"><div class="ladder-n">5</div><div class="ladder-l">Especialista</div></div>
+  </div>
+  <div class="i-notice"><b>⚠ Lembrete:</b> GINA 2025 — antes de qualquer step-up, sempre checar técnica inalatória e adesão. Step 4+ exige encaminhamento ao especialista pediátrico. ICS-LABA em dose média/alta: limitar a 3–6 meses quando possível.</div>
+  <button class="btn-go" onclick="startGame()">Iniciar simulação →</button>
+</div>
+
+<!-- GAME -->
+<div id="game" class="screen">
+  <div id="tb">
+    <div class="tb-l">
+      <div class="tb-badge">GINA</div>
+      <div class="tb-title" id="tb-title">Caso 1</div>
+    </div>
+    <div class="tb-r">
+      <div class="tb-s"><div class="tb-s-l">Pts</div><div class="tb-s-v" id="tb-pts">0</div></div>
+      <div class="tb-s"><div class="tb-s-l">✓</div><div class="tb-s-v" id="tb-ok" style="color:var(--green)">0</div></div>
+      <div class="tb-s"><div class="tb-s-l">✗</div><div class="tb-s-v" id="tb-fail" style="color:var(--red)">0</div></div>
+    </div>
+  </div>
+  <div id="prog"><div id="prog-f" style="width:0%"></div></div>
+  <div id="gbody">
+    <div id="lcol">
+      <div id="pcard">
+        <div class="pc-hdr">
+          <span class="tag tag-teal" id="pc-num">Caso 1/10</span>
+          <span class="tag tag-gray" id="pc-step">Step atual</span>
+        </div>
+        <div class="pc-body">
+          <div class="pc-title" id="pc-title"></div>
+          <div class="pc-ctx" id="pc-ctx"></div>
+          <div id="assess-box" style="display:none;">
+            <div class="assess-title">Avaliação de controle (últimas 4 semanas)</div>
+            <div id="assess-rows"></div>
+          </div>
+        </div>
+      </div>
+      <div id="ladder-card">
+        <div class="ladder-title">Posição na escada GINA</div>
+        <div class="ladder-visual" id="ladder-visual"></div>
+      </div>
+      <div id="smini">
+        <div class="sm"><div class="sm-l">Pts</div><div class="sm-v" id="sm-pts">0</div></div>
+        <div class="sm"><div class="sm-l">Acertos</div><div class="sm-v" id="sm-ok" style="color:var(--green)">0</div></div>
+        <div class="sm"><div class="sm-l">Erros</div><div class="sm-v" id="sm-fail" style="color:var(--red)">0</div></div>
+      </div>
+    </div>
+    <div id="rcol">
+      <div id="rscroll">
+        <div class="s-phase" id="s-phase"></div>
+        <div class="s-q" id="s-q"></div>
+        <div class="opts" id="opt-list"></div>
+        <div class="msel-grid" id="msel-grid" style="display:none;"></div>
+        <div class="fb" id="fb"><div class="fb-hd" id="fb-hd"></div><div class="fb-body" id="fb-body"></div><div class="fb-ref" id="fb-ref"></div></div>
+      </div>
+      <div id="rfooter">
+        <button class="btn-confirm" id="btn-confirm" onclick="confirmMsel()">Confirmar</button>
+        <button class="btn-next" id="btn-next" onclick="nextStep()" disabled>Próximo →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- END -->
+<div id="end" class="screen">
+  <div class="e-badge">Resultado Final · GINA 2025</div>
+  <div class="e-pts" id="e-pts">0</div>
+  <div class="e-sub" id="e-sub"></div>
+  <div class="e-grade" id="e-grade"></div>
+  <div class="e-msg" id="e-msg"></div>
+  <div class="e-tbl" id="e-tbl"></div>
+  <button class="btn-restart" onclick="restartGame()">Jogar novamente</button>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════
+   GINA 2025 — ESCADA DE TRATAMENTO (crianças 6–11 anos)
+   Referência: GINA 2025 Summary Guide, Box "Asthma treatment steps
+   for children 6–11 years"
+══════════════════════════════════════════════════════════════════ */
+const STEPS = [
+  { n: 1, label: 'SABA conforme necessário', detail: 'Sem terapia de manutenção diária. Considerar apenas se sintomas ≤ 2 dias/semana e sem história de crise grave.' },
+  { n: 2, label: 'ICS dose baixa diário', detail: 'Budesonida 100–200 mcg/dia (ou equivalente) + SABA de resgate.' },
+  { n: 3, label: 'ICS-LABA dose baixa OU ICS dose média', detail: 'Preferencial: ICS-formoterol dose baixa (também como resgate, se disponível). Alternativa: dobrar a dose de ICS.' },
+  { n: 4, label: 'ICS-LABA dose média', detail: 'GINA 2025: mudou de média-alta para média dose, para minimizar efeitos adversos. Limitar a 3–6 meses se possível. Encaminhar ao especialista.' },
+  { n: 5, label: 'Encaminhar ao especialista', detail: 'Avaliar fenótipo, considerar terapia biológica, LAMA. Manejo apenas por pneumologista/alergista pediátrico.' },
+];
+
+function renderLadder(currentStep) {
+  const html = STEPS.map(s => `
+    <div class="lv-step ${s.n === currentStep ? 'current' : ''}">
+      <span class="lv-n">${s.n}</span>
+      <span class="lv-label">${s.label}</span>
+    </div>`).join('');
+  document.getElementById('ladder-visual').innerHTML = html;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   CASOS — 10 casos sequenciais cobrindo: step-up, step-down,
+   reconhecimento de descontrole, técnica/adesão, doses exatas
+══════════════════════════════════════════════════════════════════ */
+const CASES = [
+
+/* ── 1. Primeira consulta — decidir Step inicial ── */
+{
+  title: 'Sofia, 7 anos · Primeira consulta',
+  tag: 'Diagnóstico inicial', tagColor: 'blue',
+  currentStep: 0,
+  ctx: 'Sofia, <strong>7 anos, 24 kg</strong>, encaminhada por sibilância recorrente. Mãe relata: tosse seca à noite <strong>1x/semana</strong>, sem despertares noturnos, sem limitação de atividades, <strong>nunca</strong> teve crise grave ou internação. 2 episódios de sibilância no último ano, ambos leves.',
+  assess: [
+    { l: 'Sintomas diurnos > 2x/semana', v: false },
+    { l: 'Despertar noturno', v: false },
+    { l: 'Uso de SABA de resgate > 2x/semana', v: false },
+    { l: 'Limitação de atividades', v: false },
+    { l: 'História de crise grave/internação', v: false },
+  ],
+  steps: [
+    {
+      phase: 'STEP INICIAL · DIAGNÓSTICO', type: 'c',
+      q: 'Com esse padrão de sintomas (≤ 2 dias/semana, sem crise grave), qual o Step inicial pelo GINA 2025?',
+      o: [
+        { t: 'Step 1 — SABA conforme necessário, sem terapia diária', c: true },
+        { t: 'Step 2 — ICS dose baixa diário', c: false },
+        { t: 'Step 3 — ICS-LABA dose baixa', c: false },
+        { t: 'Step 4 — encaminhar ao especialista', c: false },
+      ],
+      pts: 15, pen: 10,
+      ok: 'Correto. Sintomas ≤ 2 dias/semana e sem história de crise grave → Step 1. Evidência ainda insuficiente para terapia diária de controle nesse perfil.',
+      fail: 'GINA 2025: sintomas ≤ 2 dias/semana sem história de crise grave = Step 1 (SABA prn). Step 2 é reservado para sintomas > 2 dias/semana OU história de sibilância grave.',
+      ref: 'GINA 2025: para crianças com sintomas ≤ 2 dias/semana e sem crise grave prévia, ainda há evidência insuficiente para recomendar terapia de controle diária — usar SABA prn.',
+      nextStep: 1, nextLabel: 'Step 1 confirmado'
+    }
+  ]
+},
+
+/* ── 2. Retorno com sintomas mais frequentes — Step 1→2 ── */
+{
+  title: 'Sofia, 7 anos · Retorno em 6 meses',
+  tag: 'Reavaliação de controle', tagColor: 'amber',
+  currentStep: 1,
+  ctx: 'Sofia retorna em Step 1. Mãe relata piora: tosse <strong>4x/semana</strong>, despertar noturno <strong>1x/semana</strong>, usa o spray azul (SABA) quase todos os dias antes da educação física. <em>Sem crise grave.</em>',
+  assess: [
+    { l: 'Sintomas diurnos > 2x/semana', v: true },
+    { l: 'Despertar noturno', v: true },
+    { l: 'Uso de SABA de resgate > 2x/semana', v: true },
+    { l: 'Limitação de atividades', v: false },
+    { l: 'História de crise grave/internação', v: false },
+  ],
+  steps: [
+    {
+      phase: 'RECONHECER DESCONTROLE', type: 'msel',
+      q: 'Antes de decidir o próximo step, selecione os critérios de asma NÃO CONTROLADA presentes neste caso:',
+      items: ['Sintomas diurnos > 2 dias/semana', 'Despertar noturno por asma', 'Uso de SABA de resgate > 2 dias/semana', 'Limitação de atividades habituais', 'Crise grave nas últimas 4 semanas'],
+      correct: ['Sintomas diurnos > 2 dias/semana', 'Despertar noturno por asma', 'Uso de SABA de resgate > 2 dias/semana'],
+      pts: 15, pen: 0,
+      ok: 'Correto. 3 dos 4 critérios de não-controle estão presentes (sintomas, despertar noturno, uso de SABA) — qualquer critério presente já caracteriza não-controle, mas aqui há múltiplos.',
+      fail: 'Critérios GINA de não-controle: sintomas > 2 dias/sem, despertar noturno, SABA > 2 dias/sem, limitação de atividades. Sofia preenche os 3 primeiros — não tem limitação de atividades nem crise grave.',
+      ref: 'GINA 2025: qualquer um dos 4 critérios presente nas últimas 4 semanas já define asma parcialmente ou não controlada — não é necessário ter todos.'
+    },
+    {
+      phase: 'DECISÃO DE STEP-UP', type: 'c',
+      q: 'Antes de subir o step, qual o primeiro passo recomendado pelo GINA 2025?',
+      o: [
+        { t: 'Confirmar técnica inalatória e adesão ao tratamento atual', c: true },
+        { t: 'Subir direto para Step 3', c: false },
+        { t: 'Solicitar espirometria antes de qualquer decisão', c: false },
+        { t: 'Manter Step 1 e apenas aumentar a dose de SABA', c: false },
+      ],
+      pts: 15, pen: 10,
+      ok: 'Correto. Antes de qualquer step-up, GINA recomenda checar técnica inalatória, adesão e fatores modificáveis (exposição a gatilhos) — uma parte significativa do "descontrole" é técnica inadequada, não falha terapêutica real.',
+      fail: 'GINA 2025: antes de step-up, sempre confirmar técnica + adesão + fatores de risco modificáveis. Subir o step sem investigar isso pode mascarar o problema real (ex: técnica de espaçador incorreta).',
+      ref: 'GINA 2025 Box 3-3: ciclo de avaliação → ajuste → revisão. Antes de intensificar tratamento, sempre excluir má técnica, baixa adesão, comorbidades e exposição a gatilhos.',
+      nextLabel: 'Técnica confirmada adequada'
+    },
+    {
+      phase: 'STEP-UP E DOSE', type: 'c',
+      q: 'Técnica confirmada correta, adesão adequada. Sofia (7 anos, 24 kg) tem critérios de não-controle. Qual a conduta?',
+      o: [
+        { t: 'Step 2 — ICS dose baixa diário (budesonida 100–200 mcg/dia)', c: true },
+        { t: 'Step 3 — ICS-LABA direto, pulando o Step 2', c: false },
+        { t: 'Manter Step 1 — aguardar mais 3 meses para reavaliar', c: false },
+        { t: 'Corticoide oral em ciclo curto', c: false },
+      ],
+      pts: 15, pen: 10,
+      ok: 'Correto. Sofia não estava em terapia de controle (Step 1) e apresenta critérios de não-controle → Step 2: ICS dose baixa diário. Sempre subir um step de cada vez, não pular etapas.',
+      fail: 'O escalonamento é gradual: de Step 1 (sem controle diário) com critérios de não-controle → Step 2 (ICS baixa dose). Pular para Step 3 sem antes tentar ICS isolado expõe a criança a LABA desnecessariamente.',
+      ref: 'GINA 2025: escalonamento incremental, um step de cada vez, reavaliando resposta em 2–3 meses antes de subir novamente.',
+      nextStep: 2, nextLabel: 'Step 2 — ICS dose baixa'
+    }
+  ]
+},
+
+/* ── 3. Doses GINA — ICS baixa dose, calcular ── */
+{
+  title: 'Sofia, 7 anos · Em Step 2 há 3 meses',
+  tag: 'Verificação de dose', tagColor: 'teal',
+  currentStep: 2,
+  ctx: 'Sofia está em Step 2 com budesonida inalatória. A mãe traz a receita para você conferir antes de renovar.',
+  assess: null,
+  steps: [
+    {
+      phase: 'DOSE BAIXA DE ICS — CRIANÇA 6–11 ANOS', type: 'c',
+      q: 'Qual a faixa de dose de budesonida considerada "dose baixa" para Sofia (criança 6–11 anos) pelo GINA 2025?',
+      o: [
+        { t: '100–200 mcg/dia', c: true },
+        { t: '400–800 mcg/dia', c: false },
+        { t: '50 mcg/dia', c: false },
+        { t: '> 800 mcg/dia', c: false },
+      ],
+      pts: 10, pen: 5,
+      ok: 'Correto. Budesonida dose baixa em crianças 6–11 anos: 100–200 mcg/dia. Dose média: 200–400. Dose alta: > 400 mcg/dia.',
+      fail: 'GINA 2025 — budesonida em crianças 6–11 anos: baixa 100–200 mcg/dia, média 200–400, alta > 400 mcg/dia.',
+      ref: 'GINA 2025 Box 4-2 (doses de ICS): valores diferem por molécula. Budesonida e beclometasona têm potências distintas — sempre conferir a tabela específica da droga prescrita.',
+      nextLabel: 'Dose confirmada correta'
+    }
+  ]
+},
+
+/* ── 4. Step 2 com má técnica — não subir, corrigir ── */
+{
+  title: 'Pedro, 9 anos · Sintomas persistentes em Step 2',
+  tag: 'Pegadinha — técnica inalatória', tagColor: 'red',
+  currentStep: 2,
+  ctx: 'Pedro, <strong>9 anos</strong>, está em Step 2 (ICS baixa dose) há 4 meses mas continua com sintomas diurnos 4x/semana e despertar noturno. Você pede para ele demonstrar como usa o inalador: <em>ele faz 1 jato e prende a respiração por apenas 1 segundo, sem usar espaçador.</em>',
+  assess: [
+    { l: 'Sintomas diurnos > 2x/semana', v: true },
+    { l: 'Despertar noturno', v: true },
+    { l: 'Técnica inalatória adequada', v: false },
+  ],
+  steps: [
+    {
+      phase: 'TÉCNICA INADEQUADA IDENTIFICADA', type: 'c',
+      q: 'Pedro parece "não controlado", mas você identificou má técnica inalatória. Qual a conduta correta?',
+      o: [
+        { t: 'Subir para Step 3 imediatamente — critérios de não-controle estão presentes', c: false },
+        { t: 'Corrigir a técnica (uso de espaçador, tempo de apneia) e reavaliar em 2–4 semanas antes de subir o step', c: true },
+        { t: 'Trocar para corticoide oral contínuo', c: false },
+        { t: 'Aumentar a frequência de doses sem mudar o step', c: false },
+      ],
+      pts: 20, pen: 15,
+      ok: 'Correto. O "descontrole" de Pedro é por técnica inadequada, não falha terapêutica real. Corrigir a técnica primeiro — muitas vezes resolve o problema sem necessidade de step-up.',
+      fail: 'Armadilha clássica do GINA: subir o step sem corrigir a técnica trata um problema que não existe (falha da droga) e ignora o problema real (má administração). Sempre corrigir técnica → reavaliar → só então considerar step-up se persistir.',
+      ref: 'GINA 2025 Box 3-3: "antes de step-up, sempre verificar técnica inalatória, adesão e diagnóstico correto." Uma fração significativa de "asma refratária" é, na verdade, problema de técnica.',
+      nextLabel: 'Técnica corrigida — reavaliar em 4 semanas'
+    }
+  ]
+},
+
+/* ── 5. Step 3 — escolha entre ICS-LABA vs dobrar ICS ── */
+{
+  title: 'Marina, 10 anos · Não controlada em Step 2 com boa técnica',
+  tag: 'Step-up real', tagColor: 'amber',
+  currentStep: 2,
+  ctx: 'Marina, <strong>10 anos, 32 kg</strong>, está em Step 2 (ICS baixa dose) há 3 meses com <strong>técnica confirmada correta</strong> e <strong>boa adesão</strong> (mãe mostra histórico de uso). Ainda assim: sintomas diurnos 5x/semana, despertar noturno 2x/semana, usa SABA quase diariamente.',
+  assess: [
+    { l: 'Sintomas diurnos > 2x/semana', v: true },
+    { l: 'Despertar noturno', v: true },
+    { l: 'Uso de SABA de resgate > 2x/semana', v: true },
+    { l: 'Técnica inalatória adequada', v: true },
+    { l: 'Adesão adequada', v: true },
+  ],
+  steps: [
+    {
+      phase: 'STEP 3 — OPÇÕES GINA 2025', type: 'c',
+      q: 'Técnica e adesão confirmadas adequadas. Marina não controlou com ICS baixa dose isolado. Qual a conduta preferencial do GINA 2025 para o Step 3?',
+      o: [
+        { t: 'ICS-LABA dose baixa (preferencial) — pode ser usado também como resgate em alguns esquemas', c: true },
+        { t: 'Apenas dobrar a dose de ICS, sem adicionar LABA', c: false },
+        { t: 'Adicionar montelucaste em vez de LABA', c: false },
+        { t: 'Pular direto para Step 5 — especialista', c: false },
+      ],
+      pts: 20, pen: 15,
+      ok: 'Correto. GINA 2025 Step 3: ICS-LABA dose baixa é a opção preferencial. Dobrar a dose de ICS isolado é alternativa, mas menos eficaz que adicionar LABA.',
+      fail: 'No Step 3, a opção preferencial é ICS-LABA dose baixa — combinação tem melhor eficácia que dobrar o ICS isolado. Montelucaste é opção de 2ª linha quando LABA não está disponível ou há contraindicação.',
+      ref: 'GINA 2025: Step 3 preferencial = ICS-LABA dose baixa. Alternativas: ICS dose média isolado, ou ICS dose baixa + LTRA. Em crianças, LABA isolado sem ICS é contraindicado.',
+      nextStep: 3, nextLabel: 'Step 3 — ICS-LABA dose baixa'
+    }
+  ]
+},
+
+/* ── 6. Step 4 — limite de tempo do ICS-LABA alta dose ── */
+{
+  title: 'Marina, 10 anos · Persistência em Step 3',
+  tag: 'Mudança GINA 2025', tagColor: 'red',
+  currentStep: 3,
+  ctx: 'Marina permanece sintomática mesmo em Step 3 (ICS-LABA dose baixa), com técnica e adesão confirmadas. Critérios de não-controle persistem após 3 meses de tratamento adequado.',
+  assess: null,
+  steps: [
+    {
+      phase: 'STEP 4 — MUDANÇA IMPORTANTE GINA 2025', type: 'c',
+      q: 'Indicação de Step 4. Qual a principal mudança do GINA 2025 em relação a versões anteriores para este step?',
+      o: [
+        { t: 'ICS-LABA dose média (não mais média-alta) — para reduzir exposição a efeitos adversos do ICS em altas doses', c: true },
+        { t: 'Step 4 agora inclui antibiótico profilático', c: false },
+        { t: 'LABA isolado sem ICS passou a ser permitido', c: false },
+        { t: 'Step 4 foi removido — vai direto de Step 3 para Step 5', c: false },
+      ],
+      pts: 20, pen: 10,
+      ok: 'Correto. GINA 2025 mudou Step 4 de "ICS-LABA dose média-alta" para "ICS-LABA dose média" — reduzindo a exposição a altas doses de corticoide inalatório e seus efeitos adversos.',
+      fail: 'Mudança específica do GINA 2025: Step 4 agora recomenda ICS-LABA dose MÉDIA (não mais média-alta), minimizando exposição a doses altas de ICS. Step 4 também exige encaminhamento ao especialista pediátrico.',
+      ref: 'GINA 2025: Step 4 — ICS-LABA dose média (mudança da versão anterior que incluía dose alta). Uso de dose média-alta de ICS-LABA deve ser limitado a 3–6 meses quando possível, pelo risco de efeitos adversos sistêmicos.',
+      nextStep: 4, nextLabel: 'Step 4 — encaminhar especialista'
+    },
+    {
+      phase: 'ENCAMINHAMENTO OBRIGATÓRIO', type: 'c',
+      q: 'Marina precisa de Step 4. Qual a conduta adicional obrigatória pelo GINA 2025?',
+      o: [
+        { t: 'Encaminhar para especialista em asma pediátrica (pneumologista/alergista)', c: true },
+        { t: 'Apenas seguir com pediatra geral, sem necessidade de encaminhamento', c: false },
+        { t: 'Step 4 não precisa de encaminhamento, apenas Step 5', c: false },
+        { t: 'Encaminhar somente se houver internação prévia', c: false },
+      ],
+      pts: 10, pen: 5,
+      ok: 'Correto. GINA 2025: qualquer criança que precise de Step 4 deve ser encaminhada para avaliação especializada — investigar fenótipo, comorbidades e otimizar manejo.',
+      fail: 'GINA 2025 é explícito: "If a child needs Step 4 treatment to control asthma, refer them to a pediatric asthma expert." Isso já vale a partir do Step 4, não apenas no Step 5.',
+      ref: 'GINA 2025 Children Track: necessidade de Step 4 = critério automático de encaminhamento ao especialista pediátrico em asma.',
+      nextLabel: 'Encaminhamento realizado'
+    }
+  ]
+},
+
+/* ── 7. Step-down — quando e como descer com segurança ── */
+{
+  title: 'Lucas, 8 anos · Bem controlado em Step 3 há 6 meses',
+  tag: 'Step-down', tagColor: 'green',
+  currentStep: 3,
+  ctx: 'Lucas, <strong>8 anos</strong>, está em Step 3 (ICS-LABA dose baixa) há <strong>6 meses consecutivos</strong> totalmente assintomático: sem sintomas diurnos, sem despertar noturno, sem uso de SABA, sem limitação de atividades, função pulmonar normal.',
+  assess: [
+    { l: 'Sintomas diurnos > 2x/semana', v: false },
+    { l: 'Despertar noturno', v: false },
+    { l: 'Uso de SABA de resgate > 2x/semana', v: false },
+    { l: 'Limitação de atividades', v: false },
+    { l: 'Controle mantido há quantos meses?', v: '6 meses' },
+  ],
+  steps: [
+    {
+      phase: 'CRITÉRIOS PARA STEP-DOWN', type: 'c',
+      q: 'Lucas está bem controlado há 6 meses. O GINA 2025 recomenda considerar step-down a partir de qual período mínimo de bom controle?',
+      o: [
+        { t: '2–3 meses de bom controle mantido', c: true },
+        { t: '12 meses de bom controle mantido', c: false },
+        { t: '1 mês de bom controle', c: false },
+        { t: 'GINA não recomenda step-down em crianças', c: false },
+      ],
+      pts: 15, pen: 10,
+      ok: 'Correto. GINA recomenda considerar step-down após aproximadamente 2–3 meses de bom controle sustentado — Lucas com 6 meses está bem além do critério mínimo.',
+      fail: 'GINA 2025: considerar step-down após 2–3 meses de controle bem mantido, desde que sem fatores de risco para exacerbação. Não é necessário esperar 12 meses.',
+      ref: 'GINA 2025 Box 3-7: step-down considerado após bom controle por ≥ 2–3 meses, gradualmente, com reavaliação em 2–4 semanas após cada redução.'
+    },
+    {
+      phase: 'COMO FAZER O STEP-DOWN', type: 'c',
+      q: 'Decidido o step-down de Lucas. Qual a forma correta de reduzir o tratamento?',
+      o: [
+        { t: 'Reduzir gradualmente, um passo de cada vez, nunca suspender ICS completamente de forma abrupta', c: true },
+        { t: 'Suspender todo o tratamento de uma vez — ele está assintomático', c: false },
+        { t: 'Reduzir apenas a dose de SABA, manter ICS-LABA inalterado', c: false },
+        { t: 'Trocar imediatamente para Step 1', c: false },
+      ],
+      pts: 15, pen: 10,
+      ok: 'Correto. Step-down é gradual — reduzir um passo por vez (ex: Step 3 → Step 2), nunca parar ICS abruptamente. Reavaliar em 2–4 semanas após cada redução.',
+      fail: 'GINA 2025: step-down sempre gradual e monitorado. Suspender tratamento de controle abruptamente (especialmente ICS) aumenta risco de exacerbação, mesmo em paciente assintomático.',
+      ref: 'GINA 2025: nunca suspender ICS completamente em pacientes com história de asma persistente — manter ao menos dose baixa de ICS como manutenção mínima na maioria dos casos.',
+      nextStep: 2, nextLabel: 'Step-down para Step 2'
+    }
+  ]
+},
+
+/* ── 8. Reconhecer quando NÃO subir — fator de confusão ── */
+{
+  title: 'Beatriz, 9 anos · Tosse há 5 dias',
+  tag: 'Pegadinha — IVAS, não asma', tagColor: 'red',
+  currentStep: 2,
+  ctx: 'Beatriz está em Step 2, geralmente bem controlada. Mãe traz preocupada: <strong>nos últimos 5 dias</strong> Beatriz está tossindo bastante e teve febre baixa. Antes disso, vinha completamente assintomática há meses. <em>Coriza e dor de garganta associadas.</em>',
+  assess: null,
+  steps: [
+    {
+      phase: 'IDENTIFICAR CAUSA AGUDA VS DESCONTROLE CRÔNICO', type: 'c',
+      q: 'Beatriz tem tosse aguda de 5 dias com febre e coriza, mas histórico de bom controle crônico. Qual a interpretação correta?',
+      o: [
+        { t: 'Provável IVAS concomitante — não indica necessidade de step-up da terapia de manutenção, apenas tratamento sintomático da via aérea superior', c: true },
+        { t: 'Asma descontrolada — subir imediatamente para Step 3', c: false },
+        { t: 'Suspender ICS pois pode estar causando os sintomas', c: false },
+        { t: 'Trocar toda a medicação de controle', c: false },
+      ],
+      pts: 20, pen: 15,
+      ok: 'Correto. Febre + coriza + dor de garganta + tosse aguda em criança previamente bem controlada sugere IVAS, não descontrole da asma. Não se deve subir o step de manutenção por um evento agudo infeccioso — isso é diferente de avaliar os 4 critérios de controle das últimas 4 semanas como um padrão sustentado.',
+      fail: 'É preciso diferenciar evento agudo (IVAS) de descontrole crônico real. Os critérios de controle do GINA avaliam padrão sustentado em 4 semanas — um quadro infeccioso agudo isolado, com sinais de IVAS, não justifica step-up automático da terapia de manutenção.',
+      ref: 'GINA 2025: distinguir exacerbação desencadeada por infecção viral (manejo agudo específico) de não-controle crônico da asma (que orienta step-up da manutenção). IVAS é o principal gatilho de crise, mas resolvida a infecção, reavaliar se o padrão de controle basal se mantém.',
+      nextLabel: 'Manutenção do Step 2 — tratar IVAS'
+    }
+  ]
+},
+
+/* ── 9. Step 1 → SABA isolado não é mais recomendado sozinho ── */
+{
+  title: 'Theo, 6 anos · Diagnóstico recente, sintomas moderados',
+  tag: 'Step inicial — atenção à evidência', tagColor: 'blue',
+  currentStep: 0,
+  ctx: 'Theo, <strong>6 anos</strong>, diagnóstico recente de asma. Mãe relata sintomas <strong>3x/semana</strong> e um episódio de sibilância grave que precisou de atendimento em PS há 2 meses (sem internação).',
+  assess: [
+    { l: 'Sintomas diurnos > 2x/semana', v: true },
+    { l: 'História de sibilância grave (PS)', v: true },
+  ],
+  steps: [
+    {
+      phase: 'STEP INICIAL COM HISTÓRIA DE CRISE', type: 'c',
+      q: 'Theo tem sintomas > 2 dias/semana E história de episódio grave. Qual o Step inicial correto?',
+      o: [
+        { t: 'Step 2 — ICS dose baixa diário, mesmo sendo a primeira consulta', c: true },
+        { t: 'Step 1 — SABA prn, já que é o primeiro contato com o especialista', c: false },
+        { t: 'Step 3 direto, por causa do episódio grave', c: false },
+        { t: 'Aguardar mais sintomas antes de iniciar qualquer tratamento', c: false },
+      ],
+      pts: 20, pen: 15,
+      ok: 'Correto. GINA 2025: sintomas > 2 dias/semana OU história de episódio grave de sibilância já indica início de Step 2 (ICS diário), independente de ser a primeira consulta.',
+      fail: 'A história de crise grave muda a conduta mesmo na primeira consulta. GINA 2025: criança com sintomas > 2 dias/sem OU história de sibilância grave → iniciar diretamente em Step 2, não em Step 1.',
+      ref: 'GINA 2025: para crianças ≤ 5 anos e 6–11 anos com sintomas mais frequentes ou episódio grave prévio, iniciar com ICS dose baixa diário desde a primeira avaliação — não esperar "provar" descontrole em Step 1.',
+      nextStep: 2, nextLabel: 'Step 2 — início direto'
+    }
+  ]
+},
+
+/* ── 10. Caso integrador final — ciclo completo ── */
+{
+  title: 'Caso integrador · Ana, 11 anos',
+  tag: 'Síntese final', tagColor: 'teal',
+  currentStep: 3,
+  ctx: 'Ana, <strong>11 anos, 38 kg</strong>, em Step 3 (ICS-LABA dose baixa) há 2 meses. Retorno de rotina: sem sintomas diurnos, sem despertar noturno, sem uso de SABA, técnica e adesão confirmadas adequadas, sem crise no período.',
+  assess: [
+    { l: 'Sintomas diurnos > 2x/semana', v: false },
+    { l: 'Despertar noturno', v: false },
+    { l: 'Uso de SABA de resgate > 2x/semana', v: false },
+    { l: 'Limitação de atividades', v: false },
+    { l: 'Controle mantido há quantos meses?', v: '2 meses' },
+  ],
+  steps: [
+    {
+      phase: 'DECISÃO FINAL — MANTER, SUBIR OU DESCER?', type: 'c',
+      q: 'Ana está bem controlada, mas há apenas 2 meses (não 2–3 meses completos ainda). Qual a conduta mais prudente?',
+      o: [
+        { t: 'Manter Step 3 por mais um período e reavaliar em 4–6 semanas antes de considerar step-down', c: true },
+        { t: 'Step-down imediato para Step 2, pois já está assintomática', c: false },
+        { t: 'Step-up para Step 4 como precaução', c: false },
+        { t: 'Suspender todo o tratamento — ela está curada', c: false },
+      ],
+      pts: 15, pen: 10,
+      ok: 'Correto. 2 meses está no limite inferior do critério (2–3 meses). A conduta mais prudente é reavaliar em mais 4–6 semanas para confirmar controle sustentado antes do step-down — não é incorreto considerar, mas aguardar consolida a decisão com segurança.',
+      fail: 'Com exatamente 2 meses de controle, ainda é prudente aguardar a reavaliação completar o período mínimo recomendado (2–3 meses) antes do step-down, para confirmar que o controle é sustentado e não apenas transitório.',
+      ref: 'GINA 2025: o intervalo de 2–3 meses é o mínimo antes de considerar redução — não uma regra rígida, mas o bom senso clínico orienta confirmar a sustentabilidade do controle antes de reduzir a proteção anti-inflamatória.'
+    },
+    {
+      phase: 'SÍNTESE — REGRA DE OURO', type: 'msel',
+      q: 'Para fechar: selecione as afirmações CORRETAS sobre o manejo de manutenção da asma pelo GINA 2025:',
+      items: [
+        'Antes de step-up, sempre checar técnica e adesão',
+        'ICS-LABA dose média substituiu a dose média-alta no Step 4',
+        'Step-down deve ser abrupto para evitar polifarmácia',
+        'Step 4 exige encaminhamento ao especialista pediátrico',
+        'Step-down pode ser considerado após 2–3 meses de bom controle'
+      ],
+      correct: [
+        'Antes de step-up, sempre checar técnica e adesão',
+        'ICS-LABA dose média substituiu a dose média-alta no Step 4',
+        'Step 4 exige encaminhamento ao especialista pediátrico',
+        'Step-down pode ser considerado após 2–3 meses de bom controle'
+      ],
+      pts: 20, pen: 0,
+      ok: 'Excelente síntese. Você identificou corretamente as 4 regras-chave do GINA 2025 para escalonamento — e corretamente excluiu a afirmação falsa sobre step-down abrupto.',
+      fail: 'Revise: step-down é sempre GRADUAL, nunca abrupto. As outras 4 afirmações estão corretas: checar técnica/adesão antes de subir, ICS-LABA dose média no Step 4 (mudança 2025), encaminhamento obrigatório no Step 4, e step-down após 2–3 meses de controle.',
+      ref: 'Resumo GINA 2025: (1) técnica/adesão antes de step-up, (2) Step 4 = ICS-LABA dose média + encaminhamento especialista, (3) step-down gradual após 2–3 meses de controle sustentado, nunca suspensão abrupta.'
+    }
+  ]
+}
+
+];
+
+/* ══════════════════════════════════════════════════════════════════
+   STATE & ENGINE
+══════════════════════════════════════════════════════════════════ */
+const G = { ci: 0, si: 0, pts: 0, ok: 0, fail: 0, ans: false, mSel: [], res: [] };
+const getC = () => CASES[G.ci];
+const getS = () => CASES[G.ci].steps[G.si];
+const totalQ = () => CASES.reduce((s, c) => s + c.steps.length, 0);
+
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function render() {
+  const C = getC(), S = getS();
+  G.ans = false; G.mSel = [];
+
+  document.getElementById('tb-title').textContent = `Caso ${G.ci + 1}/${CASES.length} · Passo ${G.si + 1}/${C.steps.length}`;
+  const done = CASES.slice(0, G.ci).reduce((s, c) => s + c.steps.length, 0) + G.si;
+  document.getElementById('prog-f').style.width = `${done / totalQ() * 100}%`;
+
+  document.getElementById('pc-num').textContent = `Caso ${G.ci + 1}/${CASES.length}`;
+  const stepTag = document.getElementById('pc-step');
+  stepTag.textContent = C.tag;
+  stepTag.className = `tag tag-${C.tagColor}`;
+  document.getElementById('pc-title').textContent = C.title;
+  document.getElementById('pc-ctx').innerHTML = C.ctx;
+
+  const assessBox = document.getElementById('assess-box');
+  if (C.assess) {
+    assessBox.style.display = 'block';
+    document.getElementById('assess-rows').innerHTML = C.assess.map(a => {
+      if (typeof a.v === 'boolean') {
+        return `<div class="assess-row"><span>${a.l}</span><span class="assess-flag ${a.v ? 'flag-yes' : 'flag-no'}">${a.v ? 'SIM' : 'NÃO'}</span></div>`;
+      }
+      return `<div class="assess-row"><span>${a.l}</span><span class="assess-flag flag-no">${a.v}</span></div>`;
+    }).join('');
+  } else {
+    assessBox.style.display = 'none';
+  }
+
+  renderLadder(C.currentStep);
+
+  document.getElementById('s-phase').textContent = S.phase;
+  document.getElementById('s-q').textContent = S.q;
+
+  const fb = document.getElementById('fb');
+  fb.className = 'fb'; fb.style.display = 'none';
+  document.getElementById('btn-next').disabled = true;
+  const isLast = G.ci === CASES.length - 1 && G.si === C.steps.length - 1;
+  document.getElementById('btn-next').textContent = isLast ? 'Ver resultado →' : 'Próximo →';
+
+  if (S.type === 'msel') {
+    document.getElementById('opt-list').innerHTML = '';
+    const mg = document.getElementById('msel-grid');
+    mg.style.display = 'flex';
+    mg.innerHTML = S.items.map((item, i) =>
+      `<div class="msel-item" id="m${i}" onclick="toggleMsel(${i},'${item.replace(/'/g, "\\'")}')">
+        <span class="msel-dot"></span><span>${item}</span>
+      </div>`).join('');
+    document.getElementById('btn-confirm').style.display = 'block';
+    document.getElementById('btn-confirm').disabled = false;
+  } else {
+    document.getElementById('msel-grid').style.display = 'none';
+    document.getElementById('btn-confirm').style.display = 'none';
+    const keys = ['A', 'B', 'C', 'D'];
+    document.getElementById('opt-list').innerHTML = S.o.map((o, i) =>
+      `<button class="ob" id="o${i}" onclick="pick(${i})">
+        <span class="ok">${keys[i]}</span><span>${o.t}</span>
+      </button>`).join('');
+  }
+
+  document.getElementById('rscroll').scrollTop = 0;
+}
+
+function updScore() {
+  ['tb-pts', 'sm-pts'].forEach(id => { const e = document.getElementById(id); if (e) e.textContent = G.pts; });
+  ['tb-ok', 'sm-ok'].forEach(id => { const e = document.getElementById(id); if (e) e.textContent = G.ok; });
+  ['tb-fail', 'sm-fail'].forEach(id => { const e = document.getElementById(id); if (e) e.textContent = G.fail; });
+}
+
+function pick(idx) {
+  if (G.ans) return; G.ans = true;
+  const S = getS(); const isOk = S.o[idx].c;
+  S.o.forEach((o, i) => {
+    const el = document.getElementById(`o${i}`); if (!el) return;
+    el.disabled = true;
+    if (o.c) el.classList.add('correct');
+    else if (i === idx) el.classList.add('wrong');
+  });
+  finalize(isOk, S);
+}
+
+function toggleMsel(idx, item) {
+  if (G.ans) return;
+  const el = document.getElementById(`m${idx}`);
+  const pos = G.mSel.indexOf(item);
+  if (pos > -1) { G.mSel.splice(pos, 1); el.classList.remove('sel'); }
+  else { G.mSel.push(item); el.classList.add('sel'); }
+}
+
+function confirmMsel() {
+  if (G.ans) return; G.ans = true;
+  const S = getS();
+  const hits = S.correct.filter(c => G.mSel.includes(c)).length;
+  const wrongs = G.mSel.filter(s => !S.correct.includes(s)).length;
+  const isOk = hits >= S.correct.length - 1 && wrongs === 0;
+  S.items.forEach((item, i) => {
+    const el = document.getElementById(`m${i}`); if (!el) return;
+    el.onclick = null;
+    if (S.correct.includes(item)) el.classList.add('hit');
+    else if (G.mSel.includes(item)) el.classList.add('miss-sel');
+  });
+  document.getElementById('btn-confirm').disabled = true;
+  finalize(isOk, S);
+}
+
+function finalize(isOk, S) {
+  if (isOk) { G.pts += S.pts; G.ok++; }
+  else { G.pts = Math.max(0, G.pts - (S.pen || 0)); G.fail++; }
+  G.res.push({ t: `${G.ci + 1}. ${S.phase}`, ok: isOk });
+  if (isOk && S.nextStep !== undefined) {
+    getC().currentStep = S.nextStep;
+    renderLadder(S.nextStep);
+  }
+  showFB(isOk ? 'ok-fb' : 'fail-fb', isOk ? '✓ CORRETO' : '✗ INCORRETO', isOk ? S.ok : S.fail, S.ref);
+  updScore();
+  document.getElementById('btn-next').disabled = false;
+  setTimeout(() => document.getElementById('fb').scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 80);
+}
+
+function showFB(type, hd, body, ref) {
+  const fb = document.getElementById('fb');
+  fb.className = `fb show ${type}`; fb.style.display = 'block';
+  document.getElementById('fb-hd').className = `fb-hd ${type}`;
+  document.getElementById('fb-hd').textContent = hd;
+  document.getElementById('fb-body').textContent = body;
+  document.getElementById('fb-ref').innerHTML = `<b>GINA 2025 ·</b> ${ref}`;
+}
+
+function nextStep() {
+  G.si++;
+  if (G.si >= CASES[G.ci].steps.length) { G.ci++; G.si = 0; }
+  if (G.ci >= CASES.length) { showEnd(); return; }
+  render();
+}
+
+function showEnd() {
+  const total = totalQ(), pct = Math.round(G.ok / total * 100);
+  document.getElementById('e-pts').textContent = G.pts;
+  document.getElementById('e-sub').textContent = `${G.ok} de ${total} decisões corretas · ${pct}%`;
+  let grade, color, msg;
+  if (pct >= 90) { grade = 'EXCELENTE'; color = 'var(--green)'; msg = 'Domínio completo do escalonamento GINA 2025. Você reconhece quando subir, quando descer, e não cai nas pegadinhas de técnica/adesão vs descontrole real.'; }
+  else if (pct >= 75) { grade = 'MUITO BOM'; color = 'var(--blue)'; msg = 'Bom domínio. Revise a diferença entre evento agudo (IVAS) e descontrole crônico, e as mudanças específicas do Step 4 no GINA 2025.'; }
+  else if (pct >= 60) { grade = 'REGULAR'; color = 'var(--amber)'; msg = 'Atenção aos critérios de não-controle e à regra de sempre checar técnica/adesão antes de subir o step.'; }
+  else { grade = 'PRECISA REVISAR'; color = 'var(--red)'; msg = 'Releia a escada GINA 2025 com calma — foque nos 4 critérios de controle e na sequência correta de step-up/step-down.'; }
+  document.getElementById('e-grade').textContent = grade;
+  document.getElementById('e-grade').style.color = color;
+  document.getElementById('e-msg').textContent = msg;
+  document.getElementById('e-tbl').innerHTML = G.res.map(r =>
+    `<div class="er"><span>${r.t}</span><span class="er-tag ${r.ok ? 'er-ok' : 'er-fail'}">${r.ok ? 'ACERTO' : 'ERRO'}</span></div>`
+  ).join('');
+  show('end');
+}
+
+function startGame() {
+  G.ci = 0; G.si = 0; G.pts = 0; G.ok = 0; G.fail = 0; G.res = [];
+  updScore(); show('game'); render();
+}
+// Salva os valores originais de currentStep para reset correto
+const ORIGINAL_STEPS = CASES.map(c => c.currentStep);
+
+function restartGame() {
+  CASES.forEach((c, i) => { c.currentStep = ORIGINAL_STEPS[i]; });
+  show('intro');
+}
+</script>
+</body>
+</html>
