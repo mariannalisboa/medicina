@@ -37,7 +37,7 @@ html,body{background:#f5f5f7;color:#111;font-family:'Inter',sans-serif;font-size
 .btn-go:hover{background:#0a5a54;}.btn-go:active{transform:scale(.98);}
 
 /* GAME */
-#game{flex-direction:column;min-height:100vh;}
+#game{flex-direction:column;height:100vh;overflow:hidden;}
 #tb{background:#fff;border-bottom:1px solid var(--border);height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 18px;position:sticky;top:0;z-index:100;box-shadow:var(--shadow);}
 .tb-l{display:flex;align-items:center;gap:10px;}
 .tb-badge{background:var(--teal);color:#fff;font-size:10px;font-weight:800;letter-spacing:.14em;padding:4px 9px;border-radius:4px;font-family:'JetBrains Mono',monospace;}
@@ -48,13 +48,17 @@ html,body{background:#f5f5f7;color:#111;font-family:'Inter',sans-serif;font-size
 #prog{height:3px;background:var(--gray-100);}
 #prog-f{height:100%;background:var(--teal);transition:width .5s;}
 
-#gbody{flex:1;display:grid;grid-template-columns:1fr 360px;overflow:hidden;max-height:calc(100vh - 55px);}
+#gbody{flex:1;display:grid;grid-template-columns:1fr 360px;overflow:hidden;min-height:0;}
+/* RIGHT col fix — footer always visible */
+#rcol{display:flex;flex-direction:column;background:#fff;overflow:hidden;height:100%;}
+#rscroll{flex:1;min-height:0;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;}
 @media(max-width:700px){
-  #gbody{grid-template-columns:1fr;max-height:none;overflow:visible;flex-direction:column;}
+  #game{height:auto;min-height:100vh;overflow-y:auto;}
+  #gbody{grid-template-columns:1fr;overflow:visible;min-height:0;}
   #lcol{max-height:none;overflow:visible;border-right:none;border-bottom:1px solid var(--border);}
-  #rcol{min-height:0;}
-  #rscroll{max-height:50vh;}
-  #game{overflow-y:auto;}
+  #rcol{height:auto;overflow:visible;}
+  #rscroll{overflow:visible;min-height:0;max-height:none;}
+  #rfooter{position:sticky;bottom:0;background:#fff;z-index:10;}
 }
 
 /* LEFT — patient + step ladder visual */
@@ -115,8 +119,7 @@ html,body{background:#f5f5f7;color:#111;font-family:'Inter',sans-serif;font-size
 .sm-v{font-size:19px;font-weight:800;font-variant-numeric:tabular-nums;}
 
 /* RIGHT — decision panel */
-#rcol{display:flex;flex-direction:column;background:#fff;overflow:hidden;}
-#rscroll{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;}
+#rscroll::-webkit-scrollbar{width:4px;}
 #rscroll::-webkit-scrollbar{width:4px;}
 #rscroll::-webkit-scrollbar-thumb{background:var(--gray-200);border-radius:2px;}
 .s-phase{font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--teal);font-family:'JetBrains Mono',monospace;}
